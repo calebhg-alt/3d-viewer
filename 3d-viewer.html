@@ -3,109 +3,209 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Model Viewer</title>
+<title>AVC 3D Model Viewer</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-*:focus-visible{outline:3px solid #378ADD;outline-offset:2px;}
-body{font-family:system-ui,sans-serif;background:#f5f5f5;display:flex;align-items:flex-start;justify-content:center;padding:20px;min-height:100vh;}
-.app{width:100%;max-width:1100px;background:white;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;}
-.toolbar{display:flex;align-items:center;gap:5px;padding:8px 12px;border-bottom:1px solid #e0e0e0;flex-wrap:wrap;background:white;}
-.tb-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;font-size:12px;border:1px solid #ccc;border-radius:6px;background:white;color:#222;cursor:pointer;min-height:32px;}
-.tb-btn:hover{background:#f0f0f0;}
-.tb-btn.active{background:#E6F1FB;border-color:#185FA5;color:#0C447C;}
-.tb-sep{width:1px;height:20px;background:#e0e0e0;margin:0 2px;flex-shrink:0;}
-.view-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;font-size:11px;font-weight:600;border:1px solid #ccc;border-radius:6px;background:white;color:#555;cursor:pointer;}
-.view-btn:hover{background:#f0f0f0;color:#222;}
-.kbd-panel{display:none;background:#f9f9f9;border-top:1px solid #e0e0e0;padding:10px 14px;font-size:12px;color:#555;}
-.kbd-panel.open{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;}
-.kbd-row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
-kbd{background:white;border:1px solid #bbb;border-radius:4px;padding:1px 5px;font-size:11px;color:#333;}
-#status-bar{padding:6px 14px;font-size:12px;color:#666;border-top:1px solid #e0e0e0;background:white;min-height:28px;}
-.mrow{display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;font-size:12px;gap:8px;}
-.mrow:last-child{border-bottom:none;}
-.mbadge{font-size:11px;padding:1px 7px;border-radius:5px;font-weight:600;}
-.mbadge-linear{background:#E6F1FB;color:#0C447C;}
-.mbadge-radial{background:#EAF3DE;color:#27500A;}
+*:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
+body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-items:flex-start;justify-content:center;padding:20px;min-height:100vh;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+:root{
+  --avc-orange:#C4721A;
+  --avc-orange-bg:#FDF0E0;
+  --avc-burgundy:#6B2537;
+  --avc-burgundy-bg:#F5EAED;
+  --avc-steel:#2B6A82;
+  --avc-steel-bg:#E6F2F6;
+}
+.app-shell{width:100%;max-width:1100px;display:flex;flex-direction:column;border:1px solid #CBD5DC;border-radius:10px;overflow:hidden;background:white;}
+.app-header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--avc-burgundy);border-bottom:2px solid #4A1A26;}
+.header-mark{display:flex;gap:4px;align-items:stretch;height:28px;}
+.mark-bar{width:8px;border-radius:2px;}
+.mark-bar-1{background:#F5A623;}
+.mark-bar-2{background:#9FC8D6;}
+.mark-bar-3{background:#C06080;width:5px;}
+.header-wordmark{display:flex;flex-direction:column;line-height:1.15;}
+.header-wordmark span:first-child{font-size:13px;font-weight:500;color:white;letter-spacing:0.07em;}
+.header-wordmark span:last-child{font-size:10px;color:#C8A8B2;letter-spacing:0.12em;}
+.header-title{font-size:13px;font-weight:500;color:white;margin-left:auto;opacity:0.85;}
+.selector-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #CBD5DC;background:var(--avc-steel-bg);}
+.selector-bar label{font-size:13px;font-weight:500;color:var(--avc-burgundy);white-space:nowrap;}
+#model-select{font-size:13px;padding:5px 10px;border:1px solid #8AAEBB;border-radius:6px;background:white;color:#1A1A1A;cursor:pointer;min-height:32px;flex:1;max-width:320px;}
+#model-select:focus{outline:3px solid #185FA5;outline-offset:2px;}
+#model-status{font-size:12px;color:var(--avc-steel);white-space:nowrap;}
+.toolbar{display:flex;align-items:center;gap:4px;padding:7px 10px;border-bottom:1px solid #CBD5DC;flex-wrap:wrap;background:white;}
+.tb-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;font-size:12px;border:1px solid #CBD5DC;border-radius:6px;background:white;color:#2C2C2A;cursor:pointer;min-height:30px;}
+.tb-btn:hover{background:var(--avc-steel-bg);border-color:#8AAEBB;color:var(--avc-steel);}
+.tb-btn.active{background:var(--avc-burgundy-bg);border-color:var(--avc-burgundy);color:var(--avc-burgundy);font-weight:500;}
+.tb-sep{width:1px;height:18px;background:#CBD5DC;margin:0 2px;flex-shrink:0;}
+.view-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:30px;height:30px;font-size:11px;font-weight:500;border:1px solid #CBD5DC;border-radius:6px;background:white;color:#444;cursor:pointer;}
+.view-btn:hover{background:var(--avc-steel-bg);border-color:#8AAEBB;color:var(--avc-steel);}
+.kbd-panel{display:none;background:#F7F9FB;border-top:1px solid #CBD5DC;padding:10px 14px;font-size:12px;color:#444;}
+.kbd-panel.open{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;}
+.kbd-row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
+kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;font-size:11px;color:#2C2C2A;}
+#status-bar{padding:5px 14px;font-size:12px;color:#5F5E5A;border-top:1px solid #CBD5DC;background:white;min-height:26px;}
+.mrow{display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid #E8EDF0;font-size:12px;gap:8px;}
+.mrow:last-child{border-bottom:none;}
+.mbadge{font-size:11px;padding:1px 7px;border-radius:5px;font-weight:500;}
+.mbadge-linear{background:#E6F2F6;color:var(--avc-steel);}
+.mbadge-radial{background:var(--avc-orange-bg);color:var(--avc-orange);}
+#code-modal{position:absolute;inset:0;background:rgba(10,14,25,0.88);display:none;align-items:center;justify-content:center;z-index:100;}
+#code-box{background:white;border:1px solid #CBD5DC;border-radius:10px;padding:24px 26px;width:300px;display:flex;flex-direction:column;gap:14px;}
+#code-box h2{font-size:15px;font-weight:500;color:var(--avc-burgundy);margin:0;display:flex;align-items:center;gap:8px;}
+#code-box p{font-size:12px;color:#5F5E5A;margin:0;line-height:1.5;}
+#code-input{font-size:15px;padding:8px 12px;border:1px solid #B0BEC5;border-radius:6px;background:white;color:#1A1A1A;letter-spacing:0.12em;text-align:center;width:100%;}
+#code-input:focus{outline:3px solid #185FA5;outline-offset:2px;border-color:#185FA5;}
+#code-error{font-size:12px;color:#A32D2D;display:none;text-align:center;font-weight:500;}
+#code-submit{background:var(--avc-burgundy);color:white;border:none;border-radius:6px;padding:9px 0;font-size:13px;font-weight:500;cursor:pointer;width:100%;}
+#code-submit:hover{background:#4A1A26;}
+#code-submit:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
+#code-cancel{background:none;border:none;font-size:12px;color:#5F5E5A;cursor:pointer;text-align:center;padding:2px;text-decoration:underline;}
+#code-cancel:hover{color:#1A1A1A;}
+.codes-panel{padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;}
+.codes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.codes-title{font-size:12px;font-weight:500;color:var(--avc-burgundy);display:flex;align-items:center;gap:6px;}
+#instructor-prompt{display:none;margin-top:8px;padding:10px 12px;background:white;border:1px solid #CBD5DC;border-radius:6px;}
+#instructor-prompt label{font-size:12px;color:#5F5E5A;display:block;margin-bottom:6px;}
+.instructor-row{display:flex;gap:6px;align-items:center;}
+#instructor-input{font-size:14px;padding:5px 10px;border:1px solid #B0BEC5;border-radius:6px;background:white;color:#1A1A1A;letter-spacing:0.15em;text-align:center;width:110px;}
+#instructor-input:focus{outline:3px solid #185FA5;outline-offset:2px;border-color:#185FA5;}
+#instructor-error{font-size:12px;color:#A32D2D;display:none;margin-top:6px;font-weight:500;}
+#instructor-submit{background:var(--avc-burgundy);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;}
+#instructor-submit:hover{background:#4A1A26;}
+#instructor-submit:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
 </style>
 </head>
 <body>
-<div class="app">
-<h1 class="sr-only">3D Model Viewer — ADA accessible, supports GLB, GLTF, OBJ, STL</h1>
+<h1 class="sr-only">Antelope Valley College 3D Model Viewer</h1>
+<div class="app-shell">
 
-<div class="toolbar" role="toolbar" aria-label="3D viewer controls">
-  <label class="tb-btn" style="cursor:pointer;" aria-label="Upload 3D model file">
-    <i class="ti ti-upload" style="font-size:15px;" aria-hidden="true"></i><span>Upload</span>
-    <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" style="display:none;">
-  </label>
-  <span id="file-label" style="font-size:12px;color:#888;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" aria-live="polite">No file loaded</span>
-  <span style="font-size:11px;color:#aaa;padding:2px 6px;border:1px solid #e0e0e0;border-radius:5px;">glb · gltf · obj · stl</span>
-  <div class="tb-sep" role="separator"></div>
-  <button class="tb-btn active" id="btn-rotate" aria-pressed="true" aria-label="Left-click rotate mode"><i class="ti ti-rotate-360" style="font-size:15px;" aria-hidden="true"></i>Rotate</button>
-  <button class="tb-btn" id="btn-pan" aria-pressed="false" aria-label="Left-click pan mode"><i class="ti ti-arrows-move" style="font-size:15px;" aria-hidden="true"></i>Pan</button>
-  <div class="tb-sep" role="separator"></div>
-  <button class="tb-btn" id="btn-zoom-in" aria-label="Zoom in"><i class="ti ti-zoom-in" style="font-size:15px;" aria-hidden="true"></i></button>
-  <button class="tb-btn" id="btn-zoom-out" aria-label="Zoom out"><i class="ti ti-zoom-out" style="font-size:15px;" aria-hidden="true"></i></button>
-  <button class="tb-btn" id="btn-reset" aria-label="Reset to home view"><i class="ti ti-refresh" style="font-size:15px;" aria-hidden="true"></i></button>
-  <div class="tb-sep" role="separator"></div>
-  <span style="font-size:11px;color:#aaa;margin-right:2px;">Views:</span>
-  <button class="view-btn" id="btn-front"  aria-label="Front view (key 1)">F</button>
-  <button class="view-btn" id="btn-back"   aria-label="Back view (key 2)">Bk</button>
-  <button class="view-btn" id="btn-right"  aria-label="Right view (key 3)">R</button>
-  <button class="view-btn" id="btn-left"   aria-label="Left view (key 4)">L</button>
-  <button class="view-btn" id="btn-top"    aria-label="Top view (key 5)">T</button>
-  <button class="view-btn" id="btn-bottom" aria-label="Bottom view (key 6)">Bt</button>
-  <div class="tb-sep" role="separator"></div>
-  <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure (key L)"><i class="ti ti-ruler" style="font-size:15px;" aria-hidden="true"></i>Linear</button>
-  <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure (key C)"><i class="ti ti-circle" style="font-size:15px;" aria-hidden="true"></i>Radial</button>
-  <div class="tb-sep" role="separator"></div>
-  <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe (key W)"><i class="ti ti-topology-star" style="font-size:15px;" aria-hidden="true"></i></button>
-  <button class="tb-btn" id="btn-kbd" aria-expanded="false" aria-controls="kbd-panel" aria-label="Show keyboard shortcuts"><i class="ti ti-keyboard" style="font-size:15px;" aria-hidden="true"></i></button>
-</div>
-
-<div id="kbd-panel" class="kbd-panel" role="region" aria-label="Keyboard shortcuts">
-  <div class="kbd-row"><span>Rotate</span><span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span></div>
-  <div class="kbd-row"><span>Pan</span><span><kbd>Shift</kbd>+arrows</span></div>
-  <div class="kbd-row"><span>Zoom</span><span><kbd>+</kbd> / <kbd>-</kbd> or scroll</span></div>
-  <div class="kbd-row"><span>Rotate (mouse)</span><span>Right-drag (always)</span></div>
-  <div class="kbd-row"><span>Reset home</span><span><kbd>R</kbd></span></div>
-  <div class="kbd-row"><span>Front / Back</span><span><kbd>1</kbd> / <kbd>2</kbd></span></div>
-  <div class="kbd-row"><span>Right / Left</span><span><kbd>3</kbd> / <kbd>4</kbd></span></div>
-  <div class="kbd-row"><span>Top / Bottom</span><span><kbd>5</kbd> / <kbd>6</kbd></span></div>
-  <div class="kbd-row"><span>Linear measure</span><span><kbd>L</kbd></span></div>
-  <div class="kbd-row"><span>Radial measure</span><span><kbd>C</kbd></span></div>
-  <div class="kbd-row"><span>Wireframe</span><span><kbd>W</kbd></span></div>
-  <div class="kbd-row"><span>Cancel / exit</span><span><kbd>Esc</kbd></span></div>
-</div>
-
-<div style="position:relative;height:560px;background:#111827;" role="application" aria-label="3D viewport. Scroll to zoom, right-drag to rotate, always active." tabindex="0" id="viewport">
-  <canvas id="three-canvas" style="width:100%;height:100%;display:block;" aria-hidden="true"></canvas>
-  <div id="view-label" style="display:none;position:absolute;top:10px;left:12px;background:rgba(0,0,0,0.45);color:rgba(255,255,255,0.8);padding:3px 10px;border-radius:6px;font-size:12px;pointer-events:none;" aria-hidden="true"></div>
-  <div id="drop-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none;" aria-hidden="true">
-    <i class="ti ti-box" style="font-size:52px;color:rgba(255,255,255,0.18);"></i>
-    <p style="color:rgba(255,255,255,0.32);font-size:15px;margin:0;">Drop a model here or click Upload</p>
-    <p style="color:rgba(255,255,255,0.18);font-size:12px;margin:0;">GLB · GLTF · OBJ · STL</p>
+  <div class="app-header" role="banner">
+    <div class="header-mark" aria-hidden="true">
+      <div class="mark-bar mark-bar-1"></div>
+      <div class="mark-bar mark-bar-2"></div>
+      <div class="mark-bar mark-bar-3"></div>
+    </div>
+    <div class="header-wordmark">
+      <span>ANTELOPE VALLEY</span>
+      <span>COLLEGE</span>
+    </div>
+    <span class="header-title">3D Model Viewer</span>
   </div>
-  <div id="measure-hint" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:6px;font-size:12px;pointer-events:none;white-space:nowrap;color:white;" aria-hidden="true"></div>
-  <div id="snap-indicator" style="display:none;position:absolute;top:10px;right:12px;background:rgba(239,159,39,0.9);color:#412402;padding:3px 10px;border-radius:6px;font-size:11px;pointer-events:none;" aria-hidden="true">Snapped to vertex</div>
-  <div id="loading-indicator" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);" aria-hidden="true">
-    <p style="color:white;font-size:14px;margin:0;">Loading model…</p>
-  </div>
-  <div style="position:absolute;bottom:8px;right:10px;font-size:11px;color:rgba(255,255,255,0.22);pointer-events:none;" aria-hidden="true">scroll=zoom · right-drag=rotate · always active</div>
-</div>
 
-<div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Load a model to begin.</div>
-
-<div id="measure-panel" style="display:none;padding:8px 14px;background:#f9f9f9;border-top:1px solid #e0e0e0;" role="region" aria-label="Measurement results" aria-live="polite">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-    <span style="font-size:12px;font-weight:600;color:#222;">Measurements</span>
-    <button class="tb-btn" id="btn-clear-all" aria-label="Clear all measurements" style="padding:3px 8px;font-size:11px;">
-      <i class="ti ti-trash" style="font-size:13px;" aria-hidden="true"></i> Clear all
-    </button>
+  <div class="selector-bar">
+    <i class="ti ti-package" style="font-size:16px;color:var(--avc-steel);" aria-hidden="true"></i>
+    <label for="model-select">Select Model:</label>
+    <select id="model-select" aria-label="Select a 3D model to view"></select>
+    <span id="model-status" aria-live="polite"></span>
   </div>
-  <div id="measure-list"></div>
-</div>
+
+  <div class="toolbar" role="toolbar" aria-label="3D viewer controls">
+    <button class="tb-btn active" id="btn-rotate" aria-pressed="true" aria-label="Rotate mode"><i class="ti ti-rotate-360" style="font-size:14px;" aria-hidden="true"></i>Rotate</button>
+    <button class="tb-btn" id="btn-pan" aria-pressed="false" aria-label="Pan mode"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Pan</button>
+    <div class="tb-sep" role="separator"></div>
+    <button class="tb-btn" id="btn-zoom-in" aria-label="Zoom in"><i class="ti ti-zoom-in" style="font-size:14px;" aria-hidden="true"></i></button>
+    <button class="tb-btn" id="btn-zoom-out" aria-label="Zoom out"><i class="ti ti-zoom-out" style="font-size:14px;" aria-hidden="true"></i></button>
+    <button class="tb-btn" id="btn-reset" aria-label="Reset view"><i class="ti ti-refresh" style="font-size:14px;" aria-hidden="true"></i></button>
+    <div class="tb-sep" role="separator"></div>
+    <span style="font-size:11px;color:#888;margin-right:2px;" aria-hidden="true">Views:</span>
+    <button class="view-btn" id="btn-front"  aria-label="Front view, key 1">F</button>
+    <button class="view-btn" id="btn-back"   aria-label="Back view, key 2">Bk</button>
+    <button class="view-btn" id="btn-right"  aria-label="Right view, key 3">R</button>
+    <button class="view-btn" id="btn-left"   aria-label="Left view, key 4">L</button>
+    <button class="view-btn" id="btn-top"    aria-label="Top view, key 5">T</button>
+    <button class="view-btn" id="btn-bottom" aria-label="Bottom view, key 6">Bt</button>
+    <div class="tb-sep" role="separator"></div>
+    <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure, key L"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
+    <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure, key C"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial</button>
+    <div class="tb-sep" role="separator"></div>
+    <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe, key W"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i></button>
+    <button class="tb-btn" id="btn-kbd" aria-expanded="false" aria-controls="kbd-panel" aria-label="Keyboard shortcuts"><i class="ti ti-keyboard" style="font-size:14px;" aria-hidden="true"></i></button>
+  </div>
+
+  <div id="kbd-panel" class="kbd-panel" role="region" aria-label="Keyboard shortcuts">
+    <div class="kbd-row"><span>Rotate</span><span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span></div>
+    <div class="kbd-row"><span>Pan</span><span><kbd>Shift</kbd>+arrows</span></div>
+    <div class="kbd-row"><span>Zoom</span><span><kbd>+</kbd>/<kbd>-</kbd> or scroll</span></div>
+    <div class="kbd-row"><span>Right-drag</span><span>Rotate (always)</span></div>
+    <div class="kbd-row"><span>Views</span><span><kbd>1</kbd>–<kbd>6</kbd></span></div>
+    <div class="kbd-row"><span>Reset</span><span><kbd>R</kbd></span></div>
+    <div class="kbd-row"><span>Linear / Radial</span><span><kbd>L</kbd> / <kbd>C</kbd></span></div>
+    <div class="kbd-row"><span>Wireframe</span><span><kbd>W</kbd></span></div>
+    <div class="kbd-row"><span>Cancel</span><span><kbd>Esc</kbd></span></div>
+  </div>
+
+  <div style="position:relative;height:560px;background:#0F1923;" role="application" aria-label="3D viewport. Select a model from the dropdown to begin." tabindex="0" id="viewport">
+    <canvas id="three-canvas" style="width:100%;height:100%;display:block;" aria-hidden="true"></canvas>
+    <div id="code-modal" role="dialog" aria-modal="true" aria-labelledby="code-title">
+      <div id="code-box">
+        <h2 id="code-title"><i class="ti ti-lock" aria-hidden="true"></i> Access Required</h2>
+        <p>Enter the access code from your instructor to unlock this model.</p>
+        <input type="text" id="code-input" placeholder="Enter code" aria-label="Model access code" autocomplete="off" spellcheck="false" maxlength="20">
+        <div id="code-error" role="alert">Incorrect code — please try again.</div>
+        <button id="code-submit">Unlock Model</button>
+        <button id="code-cancel">Cancel</button>
+      </div>
+    </div>
+    <div id="view-label" style="display:none;position:absolute;top:10px;left:12px;background:rgba(107,37,55,0.85);color:white;padding:3px 10px;border-radius:6px;font-size:12px;pointer-events:none;" aria-hidden="true"></div>
+    <div id="drop-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;" aria-hidden="true">
+      <i class="ti ti-box" style="font-size:52px;color:rgba(255,255,255,0.15);"></i>
+      <p style="color:rgba(255,255,255,0.3);font-size:14px;margin:0;">Select a model from the dropdown above</p>
+    </div>
+    <div id="measure-hint" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:6px;font-size:12px;pointer-events:none;white-space:nowrap;color:white;" aria-hidden="true"></div>
+    <div id="snap-indicator" style="display:none;position:absolute;top:10px;right:12px;background:#C4721A;color:white;padding:3px 10px;border-radius:6px;font-size:11px;pointer-events:none;" aria-hidden="true">Snapped to vertex</div>
+    <div id="loading-indicator" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);" aria-hidden="true">
+      <p style="color:white;font-size:14px;margin:0;">Loading model…</p>
+    </div>
+    <div style="position:absolute;bottom:8px;right:10px;font-size:11px;color:rgba(255,255,255,0.22);pointer-events:none;" aria-hidden="true">scroll=zoom · right-drag=rotate · always active</div>
+    <div style="position:absolute;bottom:8px;left:10px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
+  </div>
+
+  <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin.</div>
+
+  <div id="measure-panel" style="display:none;padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;" role="region" aria-label="Measurement results" aria-live="polite">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:12px;font-weight:500;color:var(--avc-burgundy);">Measurements</span>
+      <button class="tb-btn" id="btn-clear-all" style="padding:3px 8px;font-size:11px;" aria-label="Clear all measurements"><i class="ti ti-trash" style="font-size:13px;" aria-hidden="true"></i> Clear all</button>
+    </div>
+    <div id="measure-list"></div>
+  </div>
+
+  <div class="codes-panel">
+    <div class="codes-header">
+      <span class="codes-title"><i class="ti ti-shield-lock" style="font-size:14px;" aria-hidden="true"></i> Instructor Panel</span>
+      <button class="tb-btn" id="btn-show-instructor" style="padding:3px 8px;font-size:11px;" aria-expanded="false" aria-controls="instructor-prompt">
+        <i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock
+      </button>
+    </div>
+    <div id="instructor-prompt" role="region" aria-label="Instructor PIN entry">
+      <label for="instructor-input">Enter instructor PIN to view access codes:</label>
+      <div class="instructor-row">
+        <input type="password" id="instructor-input" placeholder="PIN" aria-label="Instructor PIN" autocomplete="off" maxlength="10" inputmode="numeric">
+        <button id="instructor-submit" aria-label="Submit instructor PIN">Unlock</button>
+        <button class="tb-btn" id="instructor-cancel" aria-label="Cancel">Cancel</button>
+      </div>
+      <div id="instructor-error" role="alert">Incorrect PIN — please try again.</div>
+    </div>
+    <div id="code-table" style="display:none;" aria-label="Model access codes" role="region">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:4px;">
+        <span style="font-size:12px;color:#5F5E5A;">Access codes for all models</span>
+        <button class="tb-btn" id="btn-lock-instructor" style="padding:3px 8px;font-size:11px;" aria-label="Lock instructor panel">
+          <i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Lock
+        </button>
+      </div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;" role="table">
+        <thead><tr style="border-bottom:1px solid #CBD5DC;">
+          <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Model</th>
+          <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Access Code</th>
+          <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Status</th>
+        </tr></thead>
+        <tbody id="code-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -114,29 +214,70 @@ kbd{background:white;border:1px solid #bbb;border-radius:4px;padding:1px 5px;fon
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 (function(){
-function parseSTL(buf){
-  const view=new DataView(buf);let binary=false;
-  if(buf.byteLength>=84){const n=view.getUint32(80,true);binary=(80+4+n*50)===buf.byteLength;}
-  const pos=[],nor=[];
-  if(binary){
-    const n=view.getUint32(80,true);let o=84;
-    for(let i=0;i<n;i++){
-      const nx=view.getFloat32(o,true),ny=view.getFloat32(o+4,true),nz=view.getFloat32(o+8,true);o+=12;
-      for(let v=0;v<3;v++){pos.push(view.getFloat32(o,true),view.getFloat32(o+4,true),view.getFloat32(o+8,true));nor.push(nx,ny,nz);o+=12;}
-      o+=2;
-    }
-  } else {
-    const lines=new TextDecoder().decode(buf).split('\n');let nx=0,ny=0,nz=0;
-    for(const r of lines){const l=r.trim();
-      if(l.startsWith('facet normal')){const p=l.split(/\s+/);nx=+p[2];ny=+p[3];nz=+p[4];}
-      else if(l.startsWith('vertex')){const p=l.split(/\s+/);pos.push(+p[1],+p[2],+p[3]);nor.push(nx,ny,nz);}
-    }
-  }
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));
-  geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(nor),3));
-  return geo;
+
+// ─── INSTRUCTOR PIN ────────────────────────────────────────────────────────
+const INSTRUCTOR_PIN='7018';
+
+// ─── MODEL LIST ────────────────────────────────────────────────────────────
+// To add/edit models: change label, url (path relative to this HTML file),
+// and code (the access code students must enter).
+// Upload model files to a /models folder in your GitHub repo.
+const MODELS=[
+  {label:'Model 01 — Placeholder A',url:'models/model-01.stl',code:'ALPHA-101'},
+  {label:'Model 02 — Placeholder B',url:'models/model-02.stl',code:'BETA-202'},
+  {label:'Model 03 — Placeholder C',url:'models/model-03.stl',code:'GAMA-303'},
+  {label:'Model 04 — Placeholder D',url:'models/model-04.stl',code:'DELTA-404'},
+  {label:'Model 05 — Placeholder E',url:'models/model-05.glb',code:'ENG-505'},
+  {label:'Model 06 — Placeholder F',url:'models/model-06.glb',code:'FOXT-606'},
+  {label:'Model 07 — Placeholder G',url:'models/model-07.obj',code:'GOLF-707'},
+  {label:'Model 08 — Placeholder H',url:'models/model-08.obj',code:'HOTEL-808'},
+];
+// ──────────────────────────────────────────────────────────────────────────
+
+const unlockedModels=new Set();
+let pendingModelIndex=null;
+let instructorUnlocked=false;
+
+const sel=document.getElementById('model-select');
+sel.innerHTML='<option value="">— Choose a model —</option>';
+MODELS.forEach((m,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent='🔒 '+m.label;sel.appendChild(opt);});
+
+const tbody=document.getElementById('code-table-body');
+MODELS.forEach((m,i)=>{const tr=document.createElement('tr');tr.id='code-row-'+i;tr.style.borderBottom='1px solid #E8EDF0';tr.innerHTML='<td style="padding:4px 8px;color:#2C2C2A;">'+m.label+'</td><td style="padding:4px 8px;"><code style="background:white;padding:2px 6px;border-radius:4px;border:1px solid #CBD5DC;font-size:12px;letter-spacing:0.08em;">'+m.code+'</code></td><td style="padding:4px 8px;" id="code-status-'+i+'"><span style="color:#888;">Locked</span></td>';tbody.appendChild(tr);});
+
+const instructorPrompt=document.getElementById('instructor-prompt');
+const instructorInput=document.getElementById('instructor-input');
+const instructorError=document.getElementById('instructor-error');
+const codeTable=document.getElementById('code-table');
+const btnShowInstructor=document.getElementById('btn-show-instructor');
+
+btnShowInstructor.addEventListener('click',()=>{
+  if(instructorUnlocked){const visible=codeTable.style.display!=='none';codeTable.style.display=visible?'none':'block';btnShowInstructor.innerHTML=visible?'<i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock':'<i class="ti ti-lock-open" style="font-size:12px;" aria-hidden="true"></i> Hide';btnShowInstructor.setAttribute('aria-expanded',String(!visible));}
+  else{const visible=instructorPrompt.style.display!=='none';instructorPrompt.style.display=visible?'none':'block';btnShowInstructor.setAttribute('aria-expanded',String(!visible));if(!visible){instructorInput.value='';instructorError.style.display='none';setTimeout(()=>instructorInput.focus(),50);}}
+});
+
+function submitInstructorPIN(){
+  if(instructorInput.value.trim()===INSTRUCTOR_PIN){instructorUnlocked=true;instructorPrompt.style.display='none';codeTable.style.display='block';instructorError.style.display='none';btnShowInstructor.innerHTML='<i class="ti ti-lock-open" style="font-size:12px;" aria-hidden="true"></i> Hide';btnShowInstructor.setAttribute('aria-expanded','true');announce('Instructor panel unlocked.');}
+  else{instructorError.style.display='block';instructorInput.value='';instructorInput.style.borderColor='#A32D2D';setTimeout(()=>{instructorInput.style.borderColor='';},1000);instructorInput.focus();announce('Incorrect PIN. Please try again.');}
 }
+document.getElementById('instructor-submit').addEventListener('click',submitInstructorPIN);
+document.getElementById('instructor-cancel').addEventListener('click',()=>{instructorPrompt.style.display='none';instructorError.style.display='none';btnShowInstructor.setAttribute('aria-expanded','false');});
+instructorInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitInstructorPIN();if(e.key==='Escape'){instructorPrompt.style.display='none';btnShowInstructor.setAttribute('aria-expanded','false');}});
+document.getElementById('btn-lock-instructor').addEventListener('click',()=>{instructorUnlocked=false;codeTable.style.display='none';btnShowInstructor.innerHTML='<i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock';btnShowInstructor.setAttribute('aria-expanded','false');announce('Instructor panel locked.');});
+
+const modal=document.getElementById('code-modal');
+const codeInput=document.getElementById('code-input');
+const codeError=document.getElementById('code-error');
+function showCodeModal(idx){pendingModelIndex=idx;codeInput.value='';codeError.style.display='none';modal.style.display='flex';setTimeout(()=>codeInput.focus(),50);announce('Access code required for '+MODELS[idx].label+'.');}
+function hideCodeModal(){modal.style.display='none';sel.value='';document.getElementById('model-status').textContent='';pendingModelIndex=null;announce('Cancelled.');}
+function submitCode(){const entered=codeInput.value.trim().toUpperCase(),correct=MODELS[pendingModelIndex].code.toUpperCase();if(entered===correct){unlockedModels.add(pendingModelIndex);const opt=sel.options[pendingModelIndex+1];if(opt)opt.textContent='🔓 '+MODELS[pendingModelIndex].label;const sc=document.getElementById('code-status-'+pendingModelIndex);if(sc)sc.innerHTML='<span style="color:#2B6A82;font-weight:500;">✓ Unlocked</span>';modal.style.display='none';codeError.style.display='none';loadModelFromURL(MODELS[pendingModelIndex].url,MODELS[pendingModelIndex].label);pendingModelIndex=null;}else{codeError.style.display='block';codeInput.value='';codeInput.focus();codeInput.style.borderColor='#A32D2D';setTimeout(()=>{codeInput.style.borderColor='';},1000);announce('Incorrect code. Please try again.');}}
+document.getElementById('code-submit').addEventListener('click',submitCode);
+document.getElementById('code-cancel').addEventListener('click',hideCodeModal);
+codeInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitCode();if(e.key==='Escape')hideCodeModal();});
+modal.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=modal.querySelectorAll('button,input');const first=f[0],last=f[f.length-1];if(e.shiftKey?document.activeElement===first:document.activeElement===last){e.preventDefault();(e.shiftKey?last:first).focus();}});
+sel.addEventListener('change',()=>{const idx=parseInt(sel.value);if(isNaN(idx)){document.getElementById('model-status').textContent='';return;}if(unlockedModels.has(idx))loadModelFromURL(MODELS[idx].url,MODELS[idx].label);else showCodeModal(idx);});
+
+function parseSTL(buf){const view=new DataView(buf);let binary=false;if(buf.byteLength>=84){const n=view.getUint32(80,true);binary=(80+4+n*50)===buf.byteLength;}const pos=[],nor=[];if(binary){const n=view.getUint32(80,true);let o=84;for(let i=0;i<n;i++){const nx=view.getFloat32(o,true),ny=view.getFloat32(o+4,true),nz=view.getFloat32(o+8,true);o+=12;for(let v=0;v<3;v++){pos.push(view.getFloat32(o,true),view.getFloat32(o+4,true),view.getFloat32(o+8,true));nor.push(nx,ny,nz);o+=12;}o+=2;}}else{const lines=new TextDecoder().decode(buf).split('\n');let nx=0,ny=0,nz=0;for(const r of lines){const l=r.trim();if(l.startsWith('facet normal')){const p=l.split(/\s+/);nx=+p[2];ny=+p[3];nz=+p[4];}else if(l.startsWith('vertex')){const p=l.split(/\s+/);pos.push(+p[1],+p[2],+p[3]);nor.push(nx,ny,nz);}}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(nor),3));return geo;}
 
 const canvas=document.getElementById('three-canvas');
 const viewport=document.getElementById('viewport');
@@ -147,80 +288,36 @@ const viewLabel=document.getElementById('view-label');
 let viewLabelTimer=null;
 function announce(m){statusBar.textContent=m;}
 function showViewLabel(t){viewLabel.textContent=t;viewLabel.style.display='block';clearTimeout(viewLabelTimer);viewLabelTimer=setTimeout(()=>viewLabel.style.display='none',1800);}
-
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.outputEncoding=THREE.sRGBEncoding;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.2;
-
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x111827);
+renderer.setPixelRatio(window.devicePixelRatio);renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0F1923);
 const camera=new THREE.PerspectiveCamera(45,1,0.001,10000);camera.position.set(0,1.5,4);
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=0.07;controls.screenSpacePanning=true;
 controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
-
 scene.add(new THREE.AmbientLight(0xffffff,0.7));
 const dir=new THREE.DirectionalLight(0xffffff,1.2);dir.position.set(5,10,7);scene.add(dir);
-const fill=new THREE.DirectionalLight(0x8899ff,0.3);fill.position.set(-5,-2,-5);scene.add(fill);
-const grid=new THREE.GridHelper(10,20,0x1f2937,0x1f2937);scene.add(grid);
-
+const fill=new THREE.DirectionalLight(0x9FC8D6,0.3);fill.position.set(-5,-2,-5);scene.add(fill);
+const grid=new THREE.GridHelper(10,20,0x1A2A36,0x1A2A36);scene.add(grid);
 let currentModel=null,defaultCamPos=null,defaultTarget=null;
 let wireframeOn=false,measureMode=null,modelSize=1,vertexPositions=[];
 let pendingPoint=null,snapSphere=null,previewLine=null,previewCircle=null;
 let measureObjects=[],measureCount=0,rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
-
 function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 resize();new ResizeObserver(resize).observe(viewport);
 (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
-
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
 canvas.addEventListener('mousedown',e=>{if(e.button!==2)return;e.preventDefault();rightDragActive=true;rightDragStart={x:e.clientX,y:e.clientY};rightDragCamStart=camera.position.clone();});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 window.addEventListener('mousemove',e=>{if(!rightDragActive)return;const dx=e.clientX-rightDragStart.x,dy=e.clientY-rightDragStart.y;const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(rightDragCamStart,controls.target));sph.theta-=dx*0.008;sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi-dy*0.008));camera.position.setFromSpherical(sph).add(controls.target);camera.lookAt(controls.target);});
 window.addEventListener('mouseup',e=>{if(e.button===2)rightDragActive=false;});
-
-function fitCamera(obj){
-  const box=new THREE.Box3().setFromObject(obj);const size=new THREE.Vector3(),center=new THREE.Vector3();
-  box.getSize(size);box.getCenter(center);obj.position.sub(center);grid.position.y=-size.y/2;
-  modelSize=Math.max(size.x,size.y,size.z)||1;
-  const fov=camera.fov*(Math.PI/180),dist=(modelSize/2/Math.tan(fov/2))*2.2;
-  camera.position.set(dist*0.6,dist*0.4,dist);camera.near=dist*0.001;camera.far=dist*100;camera.updateProjectionMatrix();
-  controls.target.set(0,0,0);controls.minDistance=dist*0.05;controls.maxDistance=dist*10;controls.update();
-  defaultCamPos=camera.position.clone();defaultTarget=controls.target.clone();
-}
-
-function animateCameraTo(endPos,label){
-  const startPos=camera.position.clone(),duration=320,start=performance.now();
-  function step(now){const t=Math.min((now-start)/duration,1),e=t<0.5?2*t*t:1-2*(1-t)*(1-t);camera.position.lerpVectors(startPos,endPos,e);camera.lookAt(controls.target);if(t<1)requestAnimationFrame(step);else controls.update();}
-  requestAnimationFrame(step);showViewLabel(label);announce(label+' view.');
-}
-
+function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);const size=new THREE.Vector3(),center=new THREE.Vector3();box.getSize(size);box.getCenter(center);obj.position.sub(center);grid.position.y=-size.y/2;modelSize=Math.max(size.x,size.y,size.z)||1;const fov=camera.fov*(Math.PI/180),dist=(modelSize/2/Math.tan(fov/2))*2.2;camera.position.set(dist*0.6,dist*0.4,dist);camera.near=dist*0.001;camera.far=dist*100;camera.updateProjectionMatrix();controls.target.set(0,0,0);controls.minDistance=dist*0.05;controls.maxDistance=dist*10;controls.update();defaultCamPos=camera.position.clone();defaultTarget=controls.target.clone();}
+function animateCameraTo(endPos,label){const startPos=camera.position.clone(),duration=320,start=performance.now();function step(now){const t=Math.min((now-start)/duration,1),e=t<0.5?2*t*t:1-2*(1-t)*(1-t);camera.position.lerpVectors(startPos,endPos,e);camera.lookAt(controls.target);if(t<1)requestAnimationFrame(step);else controls.update();}requestAnimationFrame(step);showViewLabel(label);announce(label+' view.');}
 const VIEW_MAP={'1':['Front',v=>v.clone().add(new THREE.Vector3(0,0,1))],'2':['Back',v=>v.clone().add(new THREE.Vector3(0,0,-1))],'3':['Right',v=>v.clone().add(new THREE.Vector3(1,0,0))],'4':['Left',v=>v.clone().add(new THREE.Vector3(-1,0,0))],'5':['Top',v=>v.clone().add(new THREE.Vector3(0,1,0.0001))],'6':['Bottom',v=>v.clone().add(new THREE.Vector3(0,-1,0.0001))]};
 function setView(key){if(!currentModel){announce('Load a model first.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
-
 function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.isMesh)return;const pos=child.geometry.attributes.position;if(!pos)return;const mat=child.matrixWorld;for(let i=0;i<pos.count;i++)vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));});}
-function makeMat(){return new THREE.MeshStandardMaterial({color:0x8899aa,roughness:0.55,metalness:0.25,side:THREE.DoubleSide});}
-
-function loadModel(file){
-  const ext=file.name.split('.').pop().toLowerCase();
-  document.getElementById('loading-indicator').style.display='flex';
-  document.getElementById('drop-overlay').style.display='none';
-  document.getElementById('file-label').textContent=file.name;
-  announce('Loading '+file.name+'…');cancelMeasure();
-  if(currentModel){scene.remove(currentModel);currentModel=null;}
-  const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>extractVertices(currentModel),100);document.getElementById('loading-indicator').style.display='none';announce('Loaded: '+file.name+'. Scroll=zoom, right-drag=rotate, keys 1–6 for views.');viewport.focus();};
-  const fail=(m)=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';announce('Failed: '+m);};
-  if(ext==='stl'){const r=new FileReader();r.onload=ev=>{try{const geo=parseSTL(ev.target.result);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}catch(e){fail(e.message);}};r.onerror=()=>fail('file read error');r.readAsArrayBuffer(file);}
-  else if(ext==='glb'||ext==='gltf'){const url=URL.createObjectURL(file);new THREE.GLTFLoader().load(url,g=>{URL.revokeObjectURL(url);done(g.scene);},undefined,e=>{URL.revokeObjectURL(url);fail(e.message);});}
-  else if(ext==='obj'){const url=URL.createObjectURL(file);new THREE.OBJLoader().load(url,obj=>{obj.traverse(c=>{if(c.isMesh)c.material=makeMat();});URL.revokeObjectURL(url);done(obj);},undefined,e=>{URL.revokeObjectURL(url);fail(e.message);});}
-  else fail('unsupported format');
-}
-
-document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])loadModel(e.target.files[0]);});
-viewport.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();});
-viewport.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();const f=e.dataTransfer.files[0];if(f)loadModel(f);});
-
+function makeMat(){return new THREE.MeshStandardMaterial({color:0x7BAEBE,roughness:0.55,metalness:0.25,side:THREE.DoubleSide});}
+function loadModelFromURL(url,label){const ext=url.split('.').pop().toLowerCase();document.getElementById('loading-indicator').style.display='flex';document.getElementById('drop-overlay').style.display='none';document.getElementById('model-status').textContent='Loading…';announce('Loading '+label+'…');cancelMeasure();clearAllMeasurements();if(currentModel){scene.remove(currentModel);currentModel=null;}const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>extractVertices(currentModel),100);document.getElementById('loading-indicator').style.display='none';document.getElementById('model-status').textContent='✓ Loaded';announce('Loaded: '+label+'.');viewport.focus();};const fail=()=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';document.getElementById('model-status').textContent='⚠ Not found';sel.value='';announce('Could not load '+label+'. Check the file exists in your GitHub repo.');};if(ext==='stl'){fetch(url).then(r=>{if(!r.ok)throw new Error();return r.arrayBuffer();}).then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}).catch(fail);}else if(ext==='glb'||ext==='gltf'){new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);}else if(ext==='obj'){new THREE.OBJLoader().load(url,obj=>{obj.traverse(c=>{if(c.isMesh)c.material=makeMat();});done(obj);},undefined,fail);}else fail();}
 function toScreen(v3){const v=v3.clone().project(camera);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
 function findSnapVertex(mx,my,threshold=18){if(!vertexPositions.length)return null;let best=null,bestDist=Infinity;for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<threshold&&d<bestDist){bestDist=d;best=v.clone();}}return best;}
 function getMousePageXY(e){const rect=canvas.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};}
@@ -230,37 +327,23 @@ function removePreviewLine(){if(previewLine){scene.remove(previewLine);previewLi
 function removePreviewCircle(){if(previewCircle){scene.remove(previewCircle);previewCircle=null;}}
 function makeSphere(pt,color,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r||modelSize*0.012),new THREE.MeshBasicMaterial({color}));m.position.copy(pt);return m;}
 function makeCircleGeom(center,radius,normal,segments){const pts=[],q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal.clone().normalize());for(let i=0;i<=segments;i++){const a=(i/segments)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius).applyQuaternion(q).add(center));}return new THREE.BufferGeometry().setFromPoints(pts);}
-
-canvas.addEventListener('mousemove',e=>{if(!measureMode||!currentModel)return;const{x,y}=getMousePageXY(e);const snap=findSnapVertex(x,y);removeSnapSphere();if(snap){snapSphere=makeSphere(snap,0xEF9F27,modelSize*0.018);scene.add(snapSphere);snapIndicator.style.display='block';}else snapIndicator.style.display='none';if(pendingPoint){const hitPt=snap||(getRayHit(e));if(!hitPt)return;if(measureMode==='linear'){removePreviewLine();previewLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,hitPt]),new THREE.LineBasicMaterial({color:0x378ADD}));scene.add(previewLine);}else{removePreviewCircle();const radius=pendingPoint.distanceTo(hitPt),normal=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();previewCircle=new THREE.Line(makeCircleGeom(pendingPoint,radius,normal,64),new THREE.LineBasicMaterial({color:0x639922}));scene.add(previewCircle);}}});
+canvas.addEventListener('mousemove',e=>{if(!measureMode||!currentModel)return;const{x,y}=getMousePageXY(e);const snap=findSnapVertex(x,y);removeSnapSphere();if(snap){snapSphere=makeSphere(snap,0xC4721A,modelSize*0.018);scene.add(snapSphere);snapIndicator.style.display='block';}else snapIndicator.style.display='none';if(pendingPoint){const hitPt=snap||(getRayHit(e));if(!hitPt)return;if(measureMode==='linear'){removePreviewLine();previewLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,hitPt]),new THREE.LineBasicMaterial({color:0x2B6A82}));scene.add(previewLine);}else{removePreviewCircle();const radius=pendingPoint.distanceTo(hitPt),normal=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();previewCircle=new THREE.Line(makeCircleGeom(pendingPoint,radius,normal,64),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(previewCircle);}}});
 canvas.addEventListener('mouseleave',()=>{removeSnapSphere();snapIndicator.style.display='none';});
-
-canvas.addEventListener('click',e=>{
-  if(!measureMode||!currentModel||e.button!==0)return;
-  const{x,y}=getMousePageXY(e);const snap=findSnapVertex(x,y);const hitPt=snap||(getRayHit(e));if(!hitPt)return;
-  if(!pendingPoint){pendingPoint=hitPt.clone();const s=makeSphere(hitPt,0x378ADD);scene.add(s);measureObjects.push({type:'temp-marker',obj:s});measureHint.textContent=measureMode==='linear'?('Click point 2'+(snap?' (snapped)':'')):'Click edge point'+(snap?' (snapped)':'');announce('Point 1 set. Click point 2.');}
-  else{const pt2=hitPt.clone();removePreviewLine();removePreviewCircle();removeSnapSphere();snapIndicator.style.display='none';measureObjects.filter(o=>o.type==='temp-marker').forEach(t=>scene.remove(t.obj));measureObjects=measureObjects.filter(o=>o.type!=='temp-marker');measureCount++;const id=measureCount,objs=[];
-    if(measureMode==='linear'){const dist=pendingPoint.distanceTo(pt2);const sA=makeSphere(pendingPoint,0x378ADD),sB=makeSphere(pt2,0x378ADD);const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,pt2]),new THREE.LineBasicMaterial({color:0x378ADD}));scene.add(sA);scene.add(sB);scene.add(line);objs.push(sA,sB,line);addMeasureRow(id,'linear','Distance: '+dist.toFixed(4)+' units',objs);announce('Linear #'+id+': '+dist.toFixed(4)+' units.');}
-    else{const radius=pendingPoint.distanceTo(pt2),diameter=radius*2,circ=Math.PI*diameter,normal=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();const circle=new THREE.Line(makeCircleGeom(pendingPoint,radius,normal,128),new THREE.LineBasicMaterial({color:0x639922}));const sC=makeSphere(pendingPoint,0x639922);const rl=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,pt2]),new THREE.LineBasicMaterial({color:0x639922}));scene.add(circle);scene.add(sC);scene.add(rl);objs.push(circle,sC,rl);addMeasureRow(id,'radial','r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circ.toFixed(4),objs);announce('Radial #'+id+': r='+radius.toFixed(4)+'.');}
-    pendingPoint=null;measureHint.textContent=measureMode==='linear'?'Click point 1':'Click center point';}
-});
-
-function addMeasureRow(id,type,text,objs){document.getElementById('measure-panel').style.display='block';measureObjects.push({type:'measurement',id,obj:objs});const row=document.createElement('div');row.className='mrow';row.id='mrow-'+id;row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+(type==='linear'?'linear':'radial')+'</span><span style="color:#222;margin-left:6px;">'+text+'</span></span>';const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete measurement '+id);del.style.cssText='padding:2px 7px;font-size:11px;';del.innerHTML='<i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i>';del.addEventListener('click',()=>deleteMeasure(id));row.appendChild(del);document.getElementById('measure-list').appendChild(row);}
+canvas.addEventListener('click',e=>{if(!measureMode||!currentModel||e.button!==0)return;const{x,y}=getMousePageXY(e);const snap=findSnapVertex(x,y);const hitPt=snap||(getRayHit(e));if(!hitPt)return;if(!pendingPoint){pendingPoint=hitPt.clone();const s=makeSphere(hitPt,0x2B6A82);scene.add(s);measureObjects.push({type:'temp-marker',obj:s});measureHint.textContent=measureMode==='linear'?'Click point 2'+(snap?' (snapped)':''):'Click edge point'+(snap?' (snapped)':'');announce('Point 1 set. Click point 2.');}else{const pt2=hitPt.clone();removePreviewLine();removePreviewCircle();removeSnapSphere();snapIndicator.style.display='none';measureObjects.filter(o=>o.type==='temp-marker').forEach(t=>scene.remove(t.obj));measureObjects=measureObjects.filter(o=>o.type!=='temp-marker');measureCount++;const id=measureCount,objs=[];if(measureMode==='linear'){const dist=pendingPoint.distanceTo(pt2);const sA=makeSphere(pendingPoint,0x2B6A82),sB=makeSphere(pt2,0x2B6A82);const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,pt2]),new THREE.LineBasicMaterial({color:0x2B6A82}));scene.add(sA);scene.add(sB);scene.add(line);objs.push(sA,sB,line);addMeasureRow(id,'linear','Distance: '+dist.toFixed(4)+' units',objs);announce('Linear #'+id+': '+dist.toFixed(4)+' units.');}else{const radius=pendingPoint.distanceTo(pt2),diameter=radius*2,circ=Math.PI*diameter,normal=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();const circle=new THREE.Line(makeCircleGeom(pendingPoint,radius,normal,128),new THREE.LineBasicMaterial({color:0xC4721A}));const sC=makeSphere(pendingPoint,0xC4721A);const rl=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,pt2]),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(circle);scene.add(sC);scene.add(rl);objs.push(circle,sC,rl);addMeasureRow(id,'radial','r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circ.toFixed(4),objs);announce('Radial #'+id+': r='+radius.toFixed(4)+'.');}pendingPoint=null;measureHint.textContent=measureMode==='linear'?'Click point 1':'Click center point';}});
+function addMeasureRow(id,type,text,objs){document.getElementById('measure-panel').style.display='block';measureObjects.push({type:'measurement',id,obj:objs});const row=document.createElement('div');row.className='mrow';row.id='mrow-'+id;row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+(type==='linear'?'linear':'radial')+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete measurement '+id);del.style.cssText='padding:2px 7px;font-size:11px;';del.innerHTML='<i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i>';del.addEventListener('click',()=>deleteMeasure(id));row.appendChild(del);document.getElementById('measure-list').appendChild(row);}
 function deleteMeasure(id){const entry=measureObjects.find(o=>o.type==='measurement'&&o.id===id);if(entry)entry.obj.forEach(o=>scene.remove(o));measureObjects=measureObjects.filter(o=>!(o.type==='measurement'&&o.id===id));const row=document.getElementById('mrow-'+id);if(row)row.remove();if(!document.getElementById('measure-list').children.length)document.getElementById('measure-panel').style.display='none';announce('Measurement '+id+' deleted.');}
-document.getElementById('btn-clear-all').addEventListener('click',()=>{measureObjects.filter(o=>o.type==='measurement').forEach(e=>e.obj.forEach(o=>scene.remove(o)));measureObjects=measureObjects.filter(o=>o.type!=='measurement');document.getElementById('measure-list').innerHTML='';document.getElementById('measure-panel').style.display='none';announce('All measurements cleared.');});
-
+function clearAllMeasurements(){measureObjects.filter(o=>o.type==='measurement').forEach(e=>e.obj.forEach(o=>scene.remove(o)));measureObjects=measureObjects.filter(o=>o.type!=='measurement');document.getElementById('measure-list').innerHTML='';document.getElementById('measure-panel').style.display='none';}
+document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAllMeasurements();announce('All measurements cleared.');});
 function cancelMeasure(){pendingPoint=null;removeSnapSphere();removePreviewLine();removePreviewCircle();snapIndicator.style.display='none';measureObjects.filter(o=>o.type==='temp-marker').forEach(t=>scene.remove(t.obj));measureObjects=measureObjects.filter(o=>o.type!=='temp-marker');}
-function setMeasureMode(mode){cancelMeasure();if(measureMode===mode){measureMode=null;controls.enabled=true;measureHint.style.display='none';document.getElementById('btn-linear').setAttribute('aria-pressed','false');document.getElementById('btn-linear').classList.remove('active');document.getElementById('btn-radial').setAttribute('aria-pressed','false');document.getElementById('btn-radial').classList.remove('active');announce('Measure mode off.');return;}measureMode=mode;controls.enabled=false;measureHint.style.display='block';measureHint.style.background=mode==='linear'?'rgba(24,95,165,0.92)':'rgba(59,109,17,0.92)';measureHint.textContent=mode==='linear'?'Click point 1 (snaps to vertices)':'Click center point (snaps to vertices)';document.getElementById('btn-linear').setAttribute('aria-pressed',String(mode==='linear'));document.getElementById('btn-linear').classList.toggle('active',mode==='linear');document.getElementById('btn-radial').setAttribute('aria-pressed',String(mode==='radial'));document.getElementById('btn-radial').classList.toggle('active',mode==='radial');announce((mode==='linear'?'Linear':'Radial')+' measure on.');}
-
+function setMeasureMode(mode){cancelMeasure();if(measureMode===mode){measureMode=null;controls.enabled=true;measureHint.style.display='none';document.getElementById('btn-linear').setAttribute('aria-pressed','false');document.getElementById('btn-linear').classList.remove('active');document.getElementById('btn-radial').setAttribute('aria-pressed','false');document.getElementById('btn-radial').classList.remove('active');announce('Measure mode off.');return;}measureMode=mode;controls.enabled=false;measureHint.style.display='block';measureHint.style.background=mode==='linear'?'rgba(43,106,130,0.92)':'rgba(196,114,26,0.92)';measureHint.textContent=mode==='linear'?'Click point 1 (snaps to vertices)':'Click center point (snaps to vertices)';document.getElementById('btn-linear').setAttribute('aria-pressed',String(mode==='linear'));document.getElementById('btn-linear').classList.toggle('active',mode==='linear');document.getElementById('btn-radial').setAttribute('aria-pressed',String(mode==='radial'));document.getElementById('btn-radial').classList.toggle('active',mode==='radial');announce((mode==='linear'?'Linear':'Radial')+' measure on.');}
 function zoomBy(f){const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();}
 function rotateBy(az,pol){const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(camera.position,controls.target));sph.theta+=az*(Math.PI/180);sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi+pol*(Math.PI/180)));camera.position.setFromSpherical(sph).add(controls.target);controls.update();}
 function panBy(x,y){const v=new THREE.Vector3(x,y,0).applyQuaternion(camera.quaternion);camera.position.add(v);controls.target.add(v);controls.update();}
 function resetCamera(){if(!defaultCamPos)return;animateCameraTo(defaultCamPos,'Home');setTimeout(()=>{controls.target.copy(defaultTarget);controls.update();},0);}
 function toggleWireframe(){wireframeOn=!wireframeOn;const btn=document.getElementById('btn-wire');btn.setAttribute('aria-pressed',String(wireframeOn));btn.classList.toggle('active',wireframeOn);if(currentModel)currentModel.traverse(c=>{if(c.isMesh)c.material.wireframe=wireframeOn;});announce('Wireframe '+(wireframeOn?'on':'off')+'.');}
-
-viewport.addEventListener('keydown',e=>{const ps=modelSize*0.04;if(e.shiftKey){if(e.key==='ArrowLeft')panBy(-ps,0);else if(e.key==='ArrowRight')panBy(ps,0);else if(e.key==='ArrowUp')panBy(0,ps);else if(e.key==='ArrowDown')panBy(0,-ps);else return;}else{if(e.key==='ArrowLeft')rotateBy(-8,0);else if(e.key==='ArrowRight')rotateBy(8,0);else if(e.key==='ArrowUp')rotateBy(0,-8);else if(e.key==='ArrowDown')rotateBy(0,8);else if(e.key==='+'||e.key===']')zoomBy(0.85);else if(e.key==='-'||e.key==='[')zoomBy(1.18);else if(e.key==='r'||e.key==='R')resetCamera();else if(VIEW_MAP[e.key])setView(e.key);else if(e.key==='w'||e.key==='W')toggleWireframe();else if(e.key==='l'||e.key==='L')setMeasureMode('linear');else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='Escape'){if(pendingPoint){cancelMeasure();announce('Measurement cancelled.');}else if(measureMode)setMeasureMode(measureMode);}else return;}e.preventDefault();});
-
-document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Left-click: rotate.');});
-document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Left-click: pan.');});
+viewport.addEventListener('keydown',e=>{if(modal.style.display!=='none')return;const ps=modelSize*0.04;if(e.shiftKey){if(e.key==='ArrowLeft')panBy(-ps,0);else if(e.key==='ArrowRight')panBy(ps,0);else if(e.key==='ArrowUp')panBy(0,ps);else if(e.key==='ArrowDown')panBy(0,-ps);else return;}else{if(e.key==='ArrowLeft')rotateBy(-8,0);else if(e.key==='ArrowRight')rotateBy(8,0);else if(e.key==='ArrowUp')rotateBy(0,-8);else if(e.key==='ArrowDown')rotateBy(0,8);else if(e.key==='+'||e.key===']')zoomBy(0.85);else if(e.key==='-'||e.key==='[')zoomBy(1.18);else if(e.key==='r'||e.key==='R')resetCamera();else if(VIEW_MAP[e.key])setView(e.key);else if(e.key==='w'||e.key==='W')toggleWireframe();else if(e.key==='l'||e.key==='L')setMeasureMode('linear');else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='Escape'){if(pendingPoint){cancelMeasure();announce('Cancelled.');}else if(measureMode)setMeasureMode(measureMode);}else return;}e.preventDefault();});
+document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
+document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-zoom-in').addEventListener('click',()=>zoomBy(0.8));
 document.getElementById('btn-zoom-out').addEventListener('click',()=>zoomBy(1.25));
 document.getElementById('btn-reset').addEventListener('click',resetCamera);
