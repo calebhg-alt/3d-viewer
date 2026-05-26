@@ -7,6 +7,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
+
+#kb-activate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(10,14,25,0.7);cursor:pointer;}
+#kb-activate-box{background:white;border-radius:10px;padding:24px 32px;text-align:center;max-width:320px;pointer-events:none;}
+#kb-activate-box h2{font-size:16px;font-weight:500;color:#6B2537;margin:0 0 8px;}
+#kb-activate-box p{font-size:13px;color:#5F5E5A;margin:0;line-height:1.5;}
+#kb-activate-box .kb-hint{margin-top:12px;font-size:11px;color:#aaa;}
+body.kb-ready #kb-activate{display:none;}
+
 *:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
 body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-items:flex-start;justify-content:center;padding:20px;min-height:100vh;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -87,6 +95,15 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 </style>
 </head>
 <body>
+
+<div id="kb-activate" role="button" tabindex="0" aria-label="Click to enable keyboard controls">
+  <div id="kb-activate-box">
+    <h2>Click to enable keyboard controls</h2>
+    <p>Click anywhere on this viewer to activate keyboard shortcuts for rotate, zoom, pan, and views.</p>
+    <div class="kb-hint">Arrow keys · 1–6 views · R reset · L/C measure · W wireframe</div>
+  </div>
+</div>
+
 <h1 class="sr-only">Antelope Valley College 3D Model Viewer</h1>
 <div class="app-shell">
 
@@ -382,7 +399,7 @@ document.getElementById('btn-bottom').addEventListener('click',()=>setView('bott
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode. D-pad rotates the model.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode. D-pad pans the view.');});
 
-document.addEventListener('keydown',e=>{const tag=document.activeElement&&document.activeElement.tagName;if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;if(modal.style.display!=='none')return;const ps=modelSize*0.04;if(e.shiftKey){if(e.key==='ArrowLeft')panBy(-ps,0);else if(e.key==='ArrowRight')panBy(ps,0);else if(e.key==='ArrowUp')panBy(0,ps);else if(e.key==='ArrowDown')panBy(0,-ps);else return;}else{if(e.key==='ArrowLeft')rotateBy(-8,0);else if(e.key==='ArrowRight')rotateBy(8,0);else if(e.key==='ArrowUp')rotateBy(0,-8);else if(e.key==='ArrowDown')rotateBy(0,8);else if(e.key==='+'||e.key===']')zoomBy(0.85);else if(e.key==='-'||e.key==='[')zoomBy(1.18);else if(e.key==='r'||e.key==='R')resetCamera();else if(e.key==='w'||e.key==='W')toggleWireframe();else if(e.key==='l'||e.key==='L')setMeasureMode('linear');else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='Escape'){if(pendingPoint){cancelMeasure();announce('Cancelled.');}else if(measureMode)setMeasureMode(measureMode);}else return;}e.preventDefault();});
+document.addEventListener('keydown',e=>{const tag=document.activeElement&&document.activeElement.tagName;if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;if(modal&&modal.style.display!=='none')return;const ps=modelSize*0.04;if(e.shiftKey){if(e.key==='ArrowLeft')panBy(-ps,0);else if(e.key==='ArrowRight')panBy(ps,0);else if(e.key==='ArrowUp')panBy(0,ps);else if(e.key==='ArrowDown')panBy(0,-ps);else return;}else{if(e.key==='ArrowLeft')rotateBy(-8,0);else if(e.key==='ArrowRight')rotateBy(8,0);else if(e.key==='ArrowUp')rotateBy(0,-8);else if(e.key==='ArrowDown')rotateBy(0,8);else if(e.key==='+'||e.key===']')zoomBy(0.85);else if(e.key==='-'||e.key==='[')zoomBy(1.18);else if(e.key==='r'||e.key==='R')resetCamera();else if(e.key==='w'||e.key==='W')toggleWireframe();else if(e.key==='l'||e.key==='L')setMeasureMode('linear');else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='Escape'){if(pendingPoint){cancelMeasure();announce('Cancelled.');}else if(measureMode)setMeasureMode(measureMode);}else return;}e.preventDefault();});
 
 function toScreen(v3){const v=v3.clone().project(camera);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
 function findSnapVertex(mx,my,threshold=18){if(!vertexPositions.length)return null;let best=null,bestDist=Infinity;for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<threshold&&d<bestDist){bestDist=d;best=v.clone();}}return best;}
@@ -406,6 +423,24 @@ document.getElementById('btn-linear').addEventListener('click',()=>setMeasureMod
 document.getElementById('btn-radial').addEventListener('click',()=>setMeasureMode('radial'));
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
 })();
+
+// Click-to-activate keyboard focus
+(function(){
+  const overlay=document.getElementById('kb-activate');
+  function activate(){
+    document.body.classList.add('kb-ready');
+    document.body.focus();
+    announce('Keyboard controls active. Arrow keys rotate, 1-6 for views, R to reset.');
+  }
+  overlay.addEventListener('click',activate);
+  overlay.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')activate();});
+  // Also activate on any click anywhere in the doc
+  document.addEventListener('click',function onFirst(){
+    activate();
+    document.removeEventListener('click',onFirst);
+  });
+})();
+
 </script>
 </body>
 </html>
