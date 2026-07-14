@@ -8,12 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 
-#kb-activate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(10,14,25,0.7);cursor:pointer;}
-#kb-activate-box{background:white;border-radius:10px;padding:24px 32px;text-align:center;max-width:320px;pointer-events:none;}
-#kb-activate-box h2{font-size:16px;font-weight:500;color:#6B2537;margin:0 0 8px;}
-#kb-activate-box p{font-size:13px;color:#5F5E5A;margin:0;line-height:1.5;}
-#kb-activate-box .kb-hint{margin-top:12px;font-size:11px;color:#aaa;}
-body.kb-ready #kb-activate{display:none;}
+
 
 *:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
 body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-items:flex-start;justify-content:center;padding:20px;min-height:100vh;}
@@ -96,13 +91,6 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 </head>
 <body>
 
-<div id="kb-activate" role="button" tabindex="0" aria-label="Click to enable keyboard controls">
-  <div id="kb-activate-box">
-    <h2>Click to enable keyboard controls</h2>
-    <p>Click anywhere on this viewer to activate keyboard shortcuts for rotate, zoom, pan, and views.</p>
-    <div class="kb-hint">Arrow keys · 1–6 views · R reset · L/C measure · W wireframe</div>
-  </div>
-</div>
 
 <h1 class="sr-only">Antelope Valley College 3D Model Viewer</h1>
 <div class="app-shell">
@@ -224,7 +212,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div style="position:absolute;bottom:8px;left:10px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
   </div>
 
-  <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin.</div>
+  <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin. Keyboard shortcuts active — arrow keys rotate, 1–6 for views.</div>
 
   <div id="measure-panel" style="display:none;padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;" role="region" aria-label="Measurement results" aria-live="polite">
     <div style="font-size:12px;font-weight:500;color:var(--avc-burgundy);margin-bottom:6px;">Measurements</div>
@@ -757,23 +745,7 @@ document.getElementById('btn-show-circles').addEventListener('click',toggleCircl
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
 })();
 
-// Click-to-activate keyboard focus
-function announce(m){const sb=document.getElementById('status-bar');if(sb)sb.textContent=m;}
-(function(){
-  const overlay=document.getElementById('kb-activate');
-  function activate(){
-    document.body.classList.add('kb-ready');
-    document.body.focus();
-    announce('Keyboard controls active. Arrow keys rotate, 1-6 for views, R to reset.');
-  }
-  overlay.addEventListener('click',activate);
-  overlay.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')activate();});
-  // Also activate on any click anywhere in the doc
-  document.addEventListener('click',function onFirst(){
-    activate();
-    document.removeEventListener('click',onFirst);
-  });
-})();
+
 
 </script>
 </body>
