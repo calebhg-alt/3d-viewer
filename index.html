@@ -7,9 +7,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-
-
-
 *:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
 body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-items:flex-start;justify-content:center;padding:20px;min-height:100vh;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
@@ -33,9 +30,6 @@ body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-item
 .tb-btn:hover{background:var(--avc-steel-bg);border-color:#8AAEBB;color:var(--avc-steel);}
 .tb-btn.active{background:var(--avc-burgundy-bg);border-color:var(--avc-burgundy);color:var(--avc-burgundy);font-weight:500;}
 .tb-sep{width:1px;height:18px;background:#CBD5DC;margin:0 2px;flex-shrink:0;}
-.view-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:30px;height:30px;font-size:11px;font-weight:500;border:1px solid #CBD5DC;border-radius:6px;background:white;color:#444;cursor:pointer;user-select:none;}
-.view-btn:hover{background:var(--avc-steel-bg);border-color:#8AAEBB;color:var(--avc-steel);}
-/* D-pad controls */
 .ctrl-panel{display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid #CBD5DC;background:#F7F9FB;flex-wrap:wrap;}
 .ctrl-section{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .ctrl-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.06em;}
@@ -90,8 +84,6 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 </style>
 </head>
 <body>
-
-
 <h1 class="sr-only">Antelope Valley College 3D Model Viewer</h1>
 <div class="app-shell">
 
@@ -119,31 +111,28 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn active" id="btn-rotate" aria-pressed="true" aria-label="Rotate mode"><i class="ti ti-rotate-360" style="font-size:14px;" aria-hidden="true"></i>Rotate</button>
     <button class="tb-btn" id="btn-pan" aria-pressed="false" aria-label="Pan mode"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Pan</button>
     <div class="tb-sep" role="separator"></div>
-    <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
-    <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial</button>
+    <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — click 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
+    <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — click 3 points on any curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i>Wireframe</button>
     <button class="tb-btn" id="btn-reset" aria-label="Reset camera"><i class="ti ti-refresh" style="font-size:14px;" aria-hidden="true"></i>Reset</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-clear-all" aria-label="Clear all measurements"><i class="ti ti-trash" style="font-size:14px;" aria-hidden="true"></i>Clear</button>
     <button class="tb-btn" id="btn-kbd" aria-expanded="false" aria-controls="kbd-panel" aria-label="Keyboard shortcuts"><i class="ti ti-keyboard" style="font-size:14px;" aria-hidden="true"></i></button>
-    <div class="tb-sep" role="separator"></div>
-    <button class="tb-btn" id="btn-show-circles" aria-pressed="false" aria-label="Show all detected circles"><i class="ti ti-circle-dotted" style="font-size:14px;" aria-hidden="true"></i>Circles</button>
   </div>
 
   <div id="kbd-panel" class="kbd-panel" role="region" aria-label="Keyboard shortcuts">
     <div class="kbd-row"><span>Rotate</span><span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span></div>
     <div class="kbd-row"><span>Pan</span><span><kbd>Shift</kbd>+arrows</span></div>
     <div class="kbd-row"><span>Zoom</span><span><kbd>+</kbd>/<kbd>-</kbd> or scroll</span></div>
-    <div class="kbd-row"><span>Right-drag</span><span>Rotate (always)</span></div>
     <div class="kbd-row"><span>Views</span><span><kbd>1</kbd>–<kbd>6</kbd></span></div>
     <div class="kbd-row"><span>Reset</span><span><kbd>R</kbd></span></div>
-    <div class="kbd-row"><span>Linear / Radial</span><span><kbd>L</kbd> / <kbd>C</kbd></span></div>
+    <div class="kbd-row"><span>Linear</span><span><kbd>L</kbd> then 2 clicks</span></div>
+    <div class="kbd-row"><span>Radial</span><span><kbd>C</kbd> then 3 clicks</span></div>
     <div class="kbd-row"><span>Wireframe</span><span><kbd>W</kbd></span></div>
     <div class="kbd-row"><span>Cancel</span><span><kbd>Esc</kbd></span></div>
   </div>
 
-  <!-- ON-SCREEN D-PAD CONTROLS -->
   <div class="ctrl-panel" role="group" aria-label="On-screen navigation controls">
     <div class="ctrl-section">
       <div class="ctrl-label">Rotate / Pan</div>
@@ -186,7 +175,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     </div>
   </div>
 
-  <div style="position:relative;height:520px;background:#0F1923;" role="application" aria-label="3D viewport. Select a model from the dropdown to begin. Use the on-screen controls to navigate."  id="viewport">
+  <div style="position:relative;height:520px;background:#0F1923;" role="application" aria-label="3D viewport. Select a model from the dropdown to begin." id="viewport">
     <canvas id="three-canvas" style="width:100%;height:100%;display:block;" aria-hidden="true"></canvas>
     <div id="code-modal" role="dialog" aria-modal="true" aria-labelledby="code-title">
       <div id="code-box">
@@ -204,7 +193,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
       <p style="color:rgba(255,255,255,0.3);font-size:14px;margin:0;">Select a model from the dropdown above</p>
     </div>
     <div id="measure-hint" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:6px;font-size:12px;pointer-events:none;white-space:nowrap;color:white;" aria-hidden="true"></div>
-    <div id="snap-indicator" style="display:none;position:absolute;top:10px;right:12px;background:#C4721A;color:white;padding:3px 10px;border-radius:6px;font-size:11px;pointer-events:none;" aria-hidden="true">Snapped</div>
+    <div id="snap-indicator" style="display:none;position:absolute;top:10px;right:12px;background:#C4721A;color:white;padding:3px 10px;border-radius:6px;font-size:11px;pointer-events:none;" aria-hidden="true">Snapped to vertex</div>
     <div id="loading-indicator" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);" aria-hidden="true">
       <p style="color:white;font-size:14px;margin:0;">Loading model…</p>
     </div>
@@ -212,7 +201,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div style="position:absolute;bottom:8px;left:10px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
   </div>
 
-  <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin. Keyboard shortcuts active — arrow keys rotate, 1–6 for views.</div>
+  <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin.</div>
 
   <div id="measure-panel" style="display:none;padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;" role="region" aria-label="Measurement results" aria-live="polite">
     <div style="font-size:12px;font-weight:500;color:var(--avc-burgundy);margin-bottom:6px;">Measurements</div>
@@ -252,7 +241,6 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
       </table>
     </div>
   </div>
-
   <div class="watermark">Created by: Caleb Healey</div>
 </div>
 
@@ -265,20 +253,16 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 
 const INSTRUCTOR_PIN='7018';
 
-// ─── MODEL LIST ─────────────────────────────────────────────────────────────
-// NOTE: spaces in filenames are encoded as %20 in the URL field.
-// Example: "obj 2.stl" becomes "obj%202.stl"
 const MODELS=[
-  {label:'Bracket 1',                url:'models/obj%202.stl',              code:'ALPHA-101'},
-  {label:'Bracket 2',                url:'models/Bracket%202.STL',    code:'BETA-202'},
-  {label:'Bracket 3 — Placeholder C', url:'models/Bracket%203.STL',             code:'GAMA-303'},
-  {label:'Model 04 — Placeholder D', url:'models/model-04.stl',             code:'DELTA-404'},
-  {label:'Model 05 — Placeholder E', url:'models/model-05.glb',             code:'ENG-505'},
-  {label:'Model 06 — Placeholder F', url:'models/model-06.glb',             code:'FOXT-606'},
-  {label:'Model 07 — Placeholder G', url:'models/model-07.obj',             code:'GOLF-707'},
-  {label:'Model 08 — Placeholder H', url:'models/model-08.obj',             code:'HOTEL-808'},
+  {label:'Bracket 1',                 url:'models/obj%202.stl',           code:'ALPHA-101'},
+  {label:'Bracket 2',                 url:'models/Bracket%202.STL',       code:'BETA-202'},
+  {label:'Bracket 3',                 url:'models/Bracket%203.STL',       code:'BRKT-303'},
+  {label:'Model 04 — Placeholder D',  url:'models/model-04.stl',          code:'DELTA-404'},
+  {label:'Model 05 — Placeholder E',  url:'models/model-05.glb',          code:'ENG-505'},
+  {label:'Model 06 — Placeholder F',  url:'models/model-06.glb',          code:'FOXT-606'},
+  {label:'Model 07 — Placeholder G',  url:'models/model-07.obj',          code:'GOLF-707'},
+  {label:'Model 08 — Placeholder H',  url:'models/model-08.obj',          code:'HOTEL-808'},
 ];
-// ────────────────────────────────────────────────────────────────────────────
 
 const unlockedModels=new Set();
 let pendingModelIndex=null;
@@ -327,10 +311,16 @@ const viewLabel=document.getElementById('view-label');
 let viewLabelTimer=null;
 function announce(m){statusBar.textContent=m;}
 function showViewLabel(t){viewLabel.textContent=t;viewLabel.style.display='block';clearTimeout(viewLabelTimer);viewLabelTimer=setTimeout(()=>viewLabel.style.display='none',1800);}
+
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(window.devicePixelRatio);renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x0F1923);
-const camera=new THREE.PerspectiveCamera(45,1,0.001,10000);camera.position.set(0,1.5,4);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0F1923);
+const camera=new THREE.PerspectiveCamera(45,1,0.001,10000);
+camera.position.set(0,1.5,4);
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=0.07;controls.screenSpacePanning=true;
 controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
@@ -338,281 +328,47 @@ scene.add(new THREE.AmbientLight(0xffffff,0.7));
 const dir=new THREE.DirectionalLight(0xffffff,1.2);dir.position.set(5,10,7);scene.add(dir);
 const fill=new THREE.DirectionalLight(0x9FC8D6,0.3);fill.position.set(-5,-2,-5);scene.add(fill);
 const grid=new THREE.GridHelper(10,20,0x1A2A36,0x1A2A36);scene.add(grid);
+
 let currentModel=null,defaultCamPos=null,defaultTarget=null;
 let wireframeOn=false,measureMode=null,modelSize=1,vertexPositions=[];
-let pendingPoint=null,snapSphere=null,previewLine=null,previewCircle=null;
-let measureObjects=[],measureCount=0,rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
+let measureObjects=[],measureCount=0;
+let rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
+// Per-mode state
+let linearPt1=null,linearMarker1=null,linearPreview=null;
+let radialPts=[],radialMarkers=[],radialPreview=null;
+let snapSphere=null;
+
 function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 resize();new ResizeObserver(resize).observe(viewport);
 (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
 canvas.addEventListener('mousedown',e=>{if(e.button!==2)return;e.preventDefault();rightDragActive=true;rightDragStart={x:e.clientX,y:e.clientY};rightDragCamStart=camera.position.clone();});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 window.addEventListener('mousemove',e=>{if(!rightDragActive)return;const dx=e.clientX-rightDragStart.x,dy=e.clientY-rightDragStart.y;const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(rightDragCamStart,controls.target));sph.theta-=dx*0.008;sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi-dy*0.008));camera.position.setFromSpherical(sph).add(controls.target);camera.lookAt(controls.target);});
 window.addEventListener('mouseup',e=>{if(e.button===2)rightDragActive=false;});
+
 function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);const size=new THREE.Vector3(),center=new THREE.Vector3();box.getSize(size);box.getCenter(center);obj.position.sub(center);grid.position.y=-size.y/2;modelSize=Math.max(size.x,size.y,size.z)||1;const fov=camera.fov*(Math.PI/180),dist=(modelSize/2/Math.tan(fov/2))*2.2;camera.position.set(dist*0.6,dist*0.4,dist);camera.near=dist*0.001;camera.far=dist*100;camera.updateProjectionMatrix();controls.target.set(0,0,0);controls.minDistance=dist*0.05;controls.maxDistance=dist*10;controls.update();defaultCamPos=camera.position.clone();defaultTarget=controls.target.clone();}
 function animateCameraTo(endPos,label){const startPos=camera.position.clone(),duration=320,start=performance.now();function step(now){const t=Math.min((now-start)/duration,1),e=t<0.5?2*t*t:1-2*(1-t)*(1-t);camera.position.lerpVectors(startPos,endPos,e);camera.lookAt(controls.target);if(t<1)requestAnimationFrame(step);else controls.update();}requestAnimationFrame(step);if(label){showViewLabel(label);announce(label+' view.');}}
 const VIEW_MAP={'front':['Front',v=>v.clone().add(new THREE.Vector3(0,0,1))],'back':['Back',v=>v.clone().add(new THREE.Vector3(0,0,-1))],'right':['Right',v=>v.clone().add(new THREE.Vector3(1,0,0))],'left':['Left',v=>v.clone().add(new THREE.Vector3(-1,0,0))],'top':['Top',v=>v.clone().add(new THREE.Vector3(0,1,0.0001))],'bottom':['Bottom',v=>v.clone().add(new THREE.Vector3(0,-1,0.0001))]};
-function setView(key){if(!currentModel){announce('Load a model first — then use 1-6 for views.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
+function setView(key){if(!currentModel){announce('Load a model first.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
 function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.isMesh)return;const pos=child.geometry.attributes.position;if(!pos)return;const mat=child.matrixWorld;for(let i=0;i<pos.count;i++)vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));});}
-
-// ── Circle / hole center detection — planar slice method ──────────────────
-let detectedCircles = [];
-
-function fitCircle2D(pts2d) {
-  const n = pts2d.length;
-  if (n < 4) return null;
-  let sX=0,sY=0,sX2=0,sY2=0,sXY=0,sX3=0,sY3=0,sX2Y=0,sXY2=0;
-  pts2d.forEach(([x,y])=>{sX+=x;sY+=y;sX2+=x*x;sY2+=y*y;sXY+=x*y;sX3+=x*x*x;sY3+=y*y*y;sX2Y+=x*x*y;sXY2+=x*y*y;});
-  const a11=2*sX2,a12=2*sXY,a13=sX,a21=2*sXY,a22=2*sY2,a23=sY,a31=sX,a32=sY,a33=n;
-  const b1=sX3+sXY2,b2=sX2Y+sY3,b3=sX2+sY2;
-  function det(a,b,c,d,e,f,g,h,i){return a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);}
-  const D=det(a11,a12,a13,a21,a22,a23,a31,a32,a33);
-  if(Math.abs(D)<1e-12) return null;
-  const cx=det(b1,a12,a13,b2,a22,a23,b3,a32,a33)/D;
-  const cy=det(a11,b1,a13,a21,b2,a23,a31,b3,a33)/D;
-  const radii=pts2d.map(([x,y])=>Math.sqrt((x-cx)**2+(y-cy)**2));
-  const r=radii.reduce((s,ri)=>s+ri,0)/n;
-  if(r<=0) return null;
-  const std=Math.sqrt(radii.reduce((s,ri)=>s+(ri-r)**2,0)/n);
-  // Only check std/r — no angular coverage requirement
-  // (through-holes at angle only show partial arc but are still valid circles)
-  if(std/r>0.12) return null;
-  return {cx, cy, r, std};
-}
-
-function detectCircles(obj) {
-  detectedCircles = [];
-  const allVerts = [];
-  // Also collect per-triangle normals so we can group by face orientation
-  const faceNormals = [];
-  obj.traverse(child => {
-    if (!child.isMesh) return;
-    const pos = child.geometry.attributes.position;
-    if (!pos) return;
-    const mat = child.matrixWorld;
-    const normalMat = new THREE.Matrix3().getNormalMatrix(mat);
-    const normAttr = child.geometry.attributes.normal;
-    for (let i = 0; i < pos.count; i++) {
-      const v = new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat);
-      allVerts.push(v);
-      if (normAttr) {
-        const n = new THREE.Vector3(normAttr.getX(i),normAttr.getY(i),normAttr.getZ(i)).applyMatrix3(normalMat).normalize();
-        faceNormals.push(n);
-      } else {
-        faceNormals.push(new THREE.Vector3(0,1,0));
-      }
-    }
-  });
-  if (allVerts.length < 9) { announce('Model loaded. No geometry found.'); return; }
-
-  const box = new THREE.Box3();
-  allVerts.forEach(v => box.expandByPoint(v));
-  const boxSize = new THREE.Vector3(); box.getSize(boxSize);
-  const S = Math.max(boxSize.x, boxSize.y, boxSize.z);
-  const minR = S * 0.002;
-  const maxR = S * 0.7;
-
-  // STRATEGY 1: Normal-grouped clustering
-  // Group vertices by face normal direction, then fit circles within each group
-  // This finds holes on flat faces regardless of slice plane
-  const normalBins = {};
-  const binRes = 8; // quantize normal to 8 directions per axis
-  allVerts.forEach((v, i) => {
-    const n = faceNormals[i];
-    const nx = Math.round(n.x * binRes);
-    const ny = Math.round(n.y * binRes);
-    const nz = Math.round(n.z * binRes);
-    const key = nx + ',' + ny + ',' + nz;
-    if (!normalBins[key]) normalBins[key] = {verts:[], normal:n.clone()};
-    normalBins[key].verts.push(v);
-  });
-
-  Object.values(normalBins).forEach(({verts, normal}) => {
-    if (verts.length < 8) return;
-    // Build local coordinate system perpendicular to this normal
-    const ax = new THREE.Vector3();
-    if (Math.abs(normal.x) < 0.9) ax.set(1,0,0); else ax.set(0,1,0);
-    ax.crossVectors(ax, normal).normalize();
-    const ay = new THREE.Vector3().crossVectors(normal, ax).normalize();
-
-    // Project verts to 2D in this face plane
-    const centroid = new THREE.Vector3();
-    verts.forEach(v => centroid.add(v));
-    centroid.divideScalar(verts.length);
-
-    const pts2d = verts.map(v => {
-      const d = new THREE.Vector3().subVectors(v, centroid);
-      return [d.dot(ax), d.dot(ay)];
-    });
-
-    // Use fine grid to find local clusters (small holes)
-    const gridSz = S * 0.025;
-    const grid = {};
-    pts2d.forEach(([pu,pv], i) => {
-      const gk = Math.floor(pu/gridSz) + ',' + Math.floor(pv/gridSz);
-      if (!grid[gk]) grid[gk] = [];
-      grid[gk].push(i);
-    });
-
-    // For each grid cell, try fitting circle to nearby points
-    const tried = new Set();
-    Object.entries(grid).forEach(([gk, idxs]) => {
-      if (tried.has(gk)) return;
-      tried.add(gk);
-      const [pu0, pv0] = pts2d[idxs[0]];
-      // Try multiple radii - small (holes) to large (curves)
-      [S*0.08, S*0.15, S*0.25, S*0.4].forEach(searchR => {
-        const cluster = pts2d.filter(([pu,pv]) => Math.hypot(pu-pu0, pv-pv0) < searchR*2);
-        if (cluster.length < 5) return;
-        const fit = fitCircle2D(cluster);
-        if (!fit || fit.r < minR || fit.r > maxR) return;
-        // Refine: keep only ring points
-        const ring = cluster.filter(([pu,pv]) =>
-          Math.abs(Math.hypot(pu-fit.cx, pv-fit.cy) - fit.r) < fit.r * 0.15
-        );
-        if (ring.length < 5) return;
-        const refit = fitCircle2D(ring);
-        if (!refit || refit.r < minR || refit.r > maxR) return;
-        // Back to 3D
-        const c3 = centroid.clone()
-          .addScaledVector(ax, refit.cx)
-          .addScaledVector(ay, refit.cy);
-        const isDup = detectedCircles.some(dc =>
-          dc.center.distanceTo(c3) < refit.r * 0.3 &&
-          Math.abs(dc.radius - refit.r) < refit.r * 0.2
-        );
-        if (!isDup) {
-          detectedCircles.push({
-            center: c3,
-            radius: refit.r,
-            normal: normal.clone(),
-            quality: 1 - refit.std / refit.r
-          });
-        }
-      });
-    });
-  });
-
-  // STRATEGY 2: Axis-aligned slicing (catches cylinders the normal method misses)
-  const AXES = [
-    {axis:'z', u:'x', v:'y', normal:new THREE.Vector3(0,0,1)},
-    {axis:'y', u:'x', v:'z', normal:new THREE.Vector3(0,1,0)},
-    {axis:'x', u:'y', v:'z', normal:new THREE.Vector3(1,0,0)},
-  ];
-  AXES.forEach(({axis,u,v,normal}) => {
-    const axMin=box.min[axis], axMax=box.max[axis], axSpan=axMax-axMin;
-    const nSlices = Math.min(100, Math.max(40, Math.round(axSpan/(S*0.01))));
-    for (let si=0; si<=nSlices; si++) {
-      const sliceVal = axMin + (si/nSlices)*axSpan;
-      const thick = S * 0.008; // very thin slices to isolate features
-      const slicePts = allVerts.filter(p=>Math.abs(p[axis]-sliceVal)<thick);
-      if (slicePts.length < 5) continue;
-      const pts2d = slicePts.map(p=>[p[u],p[v]]);
-      // Fine grid clustering
-      const gSz = S * 0.02;
-      const grid = {};
-      pts2d.forEach(([pu,pv],i)=>{
-        const gk=Math.floor(pu/gSz)+','+Math.floor(pv/gSz);
-        if(!grid[gk])grid[gk]=[];
-        grid[gk].push(i);
-      });
-      Object.values(grid).forEach(idxs=>{
-        if(idxs.length < 4) return;
-        const [pu0,pv0]=pts2d[idxs[0]];
-        [S*0.06,S*0.12,S*0.2,S*0.35].forEach(sr=>{
-          const cl=pts2d.filter(([pu,pv])=>Math.hypot(pu-pu0,pv-pv0)<sr*2);
-          if(cl.length<4) return;
-          const fit=fitCircle2D(cl);
-          if(!fit||fit.r<minR||fit.r>maxR) return;
-          const ring=cl.filter(([pu,pv])=>Math.abs(Math.hypot(pu-fit.cx,pv-fit.cy)-fit.r)<fit.r*0.25);
-          if(ring.length<3) return;
-          const refit=fitCircle2D(ring);
-          if(!refit||refit.r<minR||refit.r>maxR) return;
-          const c3=new THREE.Vector3();
-          c3[axis]=sliceVal; c3[u]=refit.cx; c3[v]=refit.cy;
-          const isDup=detectedCircles.some(dc=>
-            dc.center.distanceTo(c3)<refit.r*0.3&&Math.abs(dc.radius-refit.r)<refit.r*0.2
-          );
-          if(!isDup) detectedCircles.push({center:c3.clone(),radius:refit.r,normal:normal.clone(),quality:1-refit.std/refit.r});
-        });
-      });
-    }
-  });
-
-  detectedCircles.sort((a,b)=>b.quality-a.quality);
-  if(detectedCircles.length>100) detectedCircles=detectedCircles.slice(0,100);
-  announce('Model loaded. '+detectedCircles.length+' circular feature'+(detectedCircles.length===1?'':'s')+' detected — hover in Radial mode to snap.');
-}
-
-// Show/hide all detected circles as debug overlays
-let circleOverlays=[];
-let showingCircles=false;
-function toggleCircleOverlays(){
-  showingCircles=!showingCircles;
-  const btn=document.getElementById('btn-show-circles');
-  btn.setAttribute('aria-pressed',String(showingCircles));
-  btn.classList.toggle('active',showingCircles);
-  if(showingCircles){
-    circleOverlays.forEach(o=>scene.remove(o));
-    circleOverlays=[];
-    detectedCircles.forEach((dc,i)=>{
-      // Draw circle
-      const line=new THREE.Line(makeCircleGeom(dc.center,dc.radius,dc.normal,64),
-        new THREE.LineBasicMaterial({color:0x00BCD4}));
-      scene.add(line); circleOverlays.push(line);
-      // Center dot
-      const dot=makeSphere(dc.center,0x00BCD4,modelSize*0.015);
-      scene.add(dot); circleOverlays.push(dot);
-    });
-    announce('Showing '+detectedCircles.length+' detected circles. Cyan = detected feature.');
-  } else {
-    circleOverlays.forEach(o=>scene.remove(o));
-    circleOverlays=[];
-    announce('Circle overlay hidden.');
-  }
-}
-
-function findSnapCircle(mx, my, threshold=32) {
-  if (!detectedCircles.length) return null;
-  let bestCenter=null, bestCenterDist=Infinity;
-  detectedCircles.forEach(dc => {
-    // Snap to projected center
-    const sc = toScreen(dc.center);
-    const dCenter = Math.hypot(sc.x-mx, sc.y-my);
-    if (dCenter < threshold && dCenter < bestCenterDist) {
-      bestCenterDist = dCenter; bestCenter = dc;
-    }
-    // Snap to perimeter — sample 16 points around circle
-    for(let i=0;i<16;i++){
-      const a=(i/16)*Math.PI*2;
-      const ax2=new THREE.Vector3().crossVectors(dc.normal,new THREE.Vector3(0,1,0.01)).normalize();
-      const ay2=new THREE.Vector3().crossVectors(dc.normal,ax2).normalize();
-      const edgePt=dc.center.clone().addScaledVector(ax2,Math.cos(a)*dc.radius).addScaledVector(ay2,Math.sin(a)*dc.radius);
-      const se=toScreen(edgePt);
-      const de=Math.hypot(se.x-mx,se.y-my);
-      if(de<threshold&&de<bestCenterDist){bestCenterDist=de;bestCenter=dc;}
-    }
-  });
-  if (bestCenter) return {type:'center', point:bestCenter.center.clone(), circle:bestCenter};
-  return null;
-}
-
-function drawCircleSnap(circle, type) {
-  if (snapSphere) { scene.remove(snapSphere); snapSphere=null; }
-  snapSphere = makeSphere(circle.center, 0x00BCD4, modelSize*0.022);
-  scene.add(snapSphere);
-  if (previewCircle) { scene.remove(previewCircle); previewCircle=null; }
-  previewCircle = new THREE.Line(
-    makeCircleGeom(circle.center, circle.radius, circle.normal, 96),
-    new THREE.LineBasicMaterial({color:0x00BCD4})
-  );
-  scene.add(previewCircle);
-}
-// ───────────────────────────────────────────────────────────────────────────
-
 function makeMat(){return new THREE.MeshStandardMaterial({color:0x7BAEBE,roughness:0.55,metalness:0.25,side:THREE.DoubleSide});}
-function loadModelFromURL(url,label){const ext=url.split('?')[0].split('.').pop().toLowerCase();document.getElementById('loading-indicator').style.display='flex';document.getElementById('drop-overlay').style.display='none';document.getElementById('model-status').textContent='Loading…';announce('Loading '+label+'…');cancelMeasure();clearAllMeasurements();if(currentModel){scene.remove(currentModel);currentModel=null;}detectedCircles=[];const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>{extractVertices(currentModel);detectCircles(currentModel);},150);document.getElementById('loading-indicator').style.display='none';document.getElementById('model-status').textContent='✓ Loaded';announce('Loaded: '+label+'.');};const fail=()=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';document.getElementById('model-status').textContent='⚠ Not found';sel.value='';announce('Could not load '+label+'. Check the file exists in your GitHub repo at: '+url);};if(ext==='stl'){fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}).catch(e=>{console.error(e);fail();});}else if(ext==='glb'||ext==='gltf'){new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);}else if(ext==='obj'){new THREE.OBJLoader().load(url,obj=>{obj.traverse(c=>{if(c.isMesh)c.material=makeMat();});done(obj);},undefined,fail);}else fail();}
+function loadModelFromURL(url,label){
+  const ext=url.split('?')[0].split('.').pop().toLowerCase();
+  document.getElementById('loading-indicator').style.display='flex';
+  document.getElementById('drop-overlay').style.display='none';
+  document.getElementById('model-status').textContent='Loading…';
+  announce('Loading '+label+'…');
+  cancelMeasure();clearAllMeasurements();
+  if(currentModel){scene.remove(currentModel);currentModel=null;}
+  const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>extractVertices(currentModel),150);document.getElementById('loading-indicator').style.display='none';document.getElementById('model-status').textContent='✓ Loaded';announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');};
+  const fail=()=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';document.getElementById('model-status').textContent='⚠ Not found';sel.value='';announce('Could not load '+label+'. Check file exists at: '+url);};
+  if(ext==='stl'){fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}).catch(e=>{console.error(e);fail();});}
+  else if(ext==='glb'||ext==='gltf'){new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);}
+  else if(ext==='obj'){new THREE.OBJLoader().load(url,obj=>{obj.traverse(c=>{if(c.isMesh)c.material=makeMat();});done(obj);},undefined,fail);}
+  else fail();
+}
 
 function zoomBy(f){const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();}
 function rotateBy(az,pol){const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(camera.position,controls.target));sph.theta+=az*(Math.PI/180);sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi+pol*(Math.PI/180)));camera.position.setFromSpherical(sph).add(controls.target);controls.update();}
@@ -620,13 +376,254 @@ function panBy(x,y){const v=new THREE.Vector3(x,y,0).applyQuaternion(camera.quat
 function resetCamera(){if(!defaultCamPos)return;animateCameraTo(defaultCamPos,'Home');setTimeout(()=>{controls.target.copy(defaultTarget);controls.update();},0);}
 function toggleWireframe(){wireframeOn=!wireframeOn;const btn=document.getElementById('btn-wire');btn.setAttribute('aria-pressed',String(wireframeOn));btn.classList.toggle('active',wireframeOn);if(currentModel)currentModel.traverse(c=>{if(c.isMesh)c.material.wireframe=wireframeOn;});announce('Wireframe '+(wireframeOn?'on':'off')+'.');}
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+function toScreen(v3){const v=v3.clone().project(camera);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
+function getMouseXY(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function getRayHit(e){if(!currentModel)return null;const r=canvas.getBoundingClientRect();const mouse=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);const rc=new THREE.Raycaster();rc.setFromCamera(mouse,camera);const hits=rc.intersectObject(currentModel,true);return hits.length?hits[0].point.clone():null;}
+function findSnapVertex(mx,my,threshold=18){if(!vertexPositions.length)return null;let best=null,bestDist=Infinity;for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<threshold&&d<bestDist){bestDist=d;best=v.clone();}}return best;}
+function makeSphere(pt,color,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r||modelSize*0.014),new THREE.MeshBasicMaterial({color}));m.position.copy(pt);return m;}
+function makeCircleGeom(center,radius,normal,segments){const pts=[],q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal.clone().normalize());for(let i=0;i<=segments;i++){const a=(i/segments)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius).applyQuaternion(q).add(center));}return new THREE.BufferGeometry().setFromPoints(pts);}
+
+// ── 3-Point Circumscribed Circle ───────────────────────────────────────────
+function circumscribedCircle(p1,p2,p3){
+  // Compute circumcenter and radius of circle through 3 3D points
+  const v1=new THREE.Vector3().subVectors(p2,p1);
+  const v2=new THREE.Vector3().subVectors(p3,p1);
+  const normal=new THREE.Vector3().crossVectors(v1,v2);
+  const nLen=normal.length();
+  if(nLen<1e-10){return null;} // collinear
+  normal.divideScalar(nLen);
+  // Build local 2D plane
+  const ax=v1.clone().normalize();
+  const ay=new THREE.Vector3().crossVectors(normal,ax).normalize();
+  // Project to 2D
+  function to2d(p){const d=new THREE.Vector3().subVectors(p,p1);return[d.dot(ax),d.dot(ay)];}
+  const [ax1,ay1]=to2d(p1); // [0,0]
+  const [ax2,ay2]=to2d(p2);
+  const [ax3,ay3]=to2d(p3);
+  // Circumcenter formula
+  const D=2*(ax2*ay3-ax3*ay2); // ax1=ay1=0
+  if(Math.abs(D)<1e-10){return null;}
+  const ux=((ax2*ax2+ay2*ay2)*ay3-(ax3*ax3+ay3*ay3)*ay2)/D;
+  const uy=((ax3*ax3+ay3*ay3)*ax2-(ax2*ax2+ay2*ay2)*ax3)/D;
+  const radius=Math.sqrt(ux*ux+uy*uy);
+  const center=p1.clone().addScaledVector(ax,ux).addScaledVector(ay,uy);
+  return{center,radius,normal};
+}
+
+// ── Measurement state management ───────────────────────────────────────────
+function cancelMeasure(){
+  // Clear linear state
+  if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
+  if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
+  linearPt1=null;
+  // Clear radial state
+  radialMarkers.forEach(m=>scene.remove(m));radialMarkers=[];
+  if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
+  radialPts=[];
+  // Clear snap
+  if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
+  snapIndicator.style.display='none';
+}
+
+function clearAllMeasurements(){
+  measureObjects.filter(o=>o.type==='measurement').forEach(e=>e.obj.forEach(o=>scene.remove(o)));
+  measureObjects=measureObjects.filter(o=>o.type!=='measurement');
+  document.getElementById('measure-list').innerHTML='';
+  document.getElementById('measure-panel').style.display='none';
+}
+
+function addMeasureRow(id,type,text,objs){
+  document.getElementById('measure-panel').style.display='block';
+  measureObjects.push({type:'measurement',id,obj:objs});
+  const row=document.createElement('div');row.className='mrow';row.id='mrow-'+id;
+  row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+(type==='linear'?'linear':'radial')+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';
+  const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete measurement '+id);del.style.cssText='padding:2px 7px;font-size:11px;';
+  del.innerHTML='<i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i>';
+  del.addEventListener('click',()=>deleteMeasure(id));
+  row.appendChild(del);document.getElementById('measure-list').appendChild(row);
+}
+
+function deleteMeasure(id){
+  const entry=measureObjects.find(o=>o.type==='measurement'&&o.id===id);
+  if(entry)entry.obj.forEach(o=>scene.remove(o));
+  measureObjects=measureObjects.filter(o=>!(o.type==='measurement'&&o.id===id));
+  const row=document.getElementById('mrow-'+id);if(row)row.remove();
+  if(!document.getElementById('measure-list').children.length)document.getElementById('measure-panel').style.display='none';
+  announce('Measurement '+id+' deleted.');
+}
+
+function setMeasureMode(mode){
+  cancelMeasure();
+  if(measureMode===mode){
+    measureMode=null;controls.enabled=true;
+    measureHint.style.display='none';
+    document.getElementById('btn-linear').setAttribute('aria-pressed','false');
+    document.getElementById('btn-linear').classList.remove('active');
+    document.getElementById('btn-radial').setAttribute('aria-pressed','false');
+    document.getElementById('btn-radial').classList.remove('active');
+    announce('Measure mode off.');return;
+  }
+  measureMode=mode;controls.enabled=false;
+  measureHint.style.display='block';
+  if(mode==='linear'){
+    measureHint.style.background='rgba(43,106,130,0.92)';
+    measureHint.textContent='Click point 1 (snaps to vertices)';
+    document.getElementById('btn-linear').setAttribute('aria-pressed','true');
+    document.getElementById('btn-linear').classList.add('active');
+    document.getElementById('btn-radial').setAttribute('aria-pressed','false');
+    document.getElementById('btn-radial').classList.remove('active');
+    announce('Linear measure: click 2 points.');
+  } else {
+    measureHint.style.background='rgba(196,114,26,0.92)';
+    measureHint.textContent='Click point 1 of 3 on the curve';
+    document.getElementById('btn-radial').setAttribute('aria-pressed','true');
+    document.getElementById('btn-radial').classList.add('active');
+    document.getElementById('btn-linear').setAttribute('aria-pressed','false');
+    document.getElementById('btn-linear').classList.remove('active');
+    announce('Radial measure: click 3 points on any curve to calculate radius.');
+  }
+}
+
+// ── Mouse move: vertex snap preview ────────────────────────────────────────
+canvas.addEventListener('mousemove',e=>{
+  if(!measureMode||!currentModel)return;
+  const{x,y}=getMouseXY(e);
+  const snap=findSnapVertex(x,y);
+  if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
+  if(snap){
+    snapSphere=makeSphere(snap,0xC4721A,modelSize*0.018);
+    scene.add(snapSphere);
+    snapIndicator.style.display='block';
+    snapIndicator.textContent='Snapped to vertex';
+    snapIndicator.style.background='#C4721A';
+  } else {
+    snapIndicator.style.display='none';
+  }
+  // Linear: preview line from pt1 to cursor
+  if(measureMode==='linear'&&linearPt1){
+    const hitPt=snap||getRayHit(e);
+    if(hitPt){
+      if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
+      linearPreview=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([linearPt1,hitPt]),
+        new THREE.LineBasicMaterial({color:0x2B6A82})
+      );
+      scene.add(linearPreview);
+    }
+  }
+  // Radial: preview circle through collected pts + cursor
+  if(measureMode==='radial'&&radialPts.length>=2){
+    const hitPt=snap||getRayHit(e);
+    if(hitPt){
+      if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
+      const pts=[...radialPts,hitPt];
+      const circ=circumscribedCircle(pts[0],pts[1],pts[2]||hitPt);
+      if(circ){
+        radialPreview=new THREE.Line(
+          makeCircleGeom(circ.center,circ.radius,circ.normal,96),
+          new THREE.LineBasicMaterial({color:0xC4721A})
+        );
+        scene.add(radialPreview);
+      }
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave',()=>{
+  if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
+  snapIndicator.style.display='none';
+});
+
+// ── Click: place measurement points ────────────────────────────────────────
+canvas.addEventListener('click',e=>{
+  if(!measureMode||!currentModel||e.button!==0)return;
+  const{x,y}=getMouseXY(e);
+  const snap=findSnapVertex(x,y);
+  const hitPt=snap||getRayHit(e);
+  if(!hitPt)return;
+
+  if(measureMode==='linear'){
+    if(!linearPt1){
+      // Place point 1
+      linearPt1=hitPt.clone();
+      if(linearMarker1){scene.remove(linearMarker1);}
+      linearMarker1=makeSphere(linearPt1,0x2B6A82);
+      scene.add(linearMarker1);
+      measureHint.textContent='Click point 2'+(snap?' (snapped)':'');
+      announce('Point 1 set. Click point 2.');
+    } else {
+      // Complete linear measurement
+      const pt2=hitPt.clone();
+      const dist=linearPt1.distanceTo(pt2);
+      if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
+      const sA=makeSphere(linearPt1,0x2B6A82);
+      const sB=makeSphere(pt2,0x2B6A82);
+      const line=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([linearPt1,pt2]),
+        new THREE.LineBasicMaterial({color:0x2B6A82})
+      );
+      scene.add(sA);scene.add(sB);scene.add(line);
+      if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
+      measureCount++;
+      const id=measureCount;
+      addMeasureRow(id,'linear','Distance: '+dist.toFixed(4)+' units',[sA,sB,line]);
+      announce('Linear #'+id+': '+dist.toFixed(4)+' units.');
+      linearPt1=null;
+      measureHint.textContent='Click point 1 (snaps to vertices)';
+    }
+  }
+
+  if(measureMode==='radial'){
+    radialPts.push(hitPt.clone());
+    const dot=makeSphere(hitPt,0xC4721A);
+    scene.add(dot);radialMarkers.push(dot);
+
+    if(radialPts.length===1){
+      measureHint.textContent='Click point 2 of 3 on the curve'+(snap?' (snapped)':'');
+      announce('Point 1 of 3 set.');
+    } else if(radialPts.length===2){
+      measureHint.textContent='Click point 3 of 3 on the curve'+(snap?' (snapped)':'');
+      announce('Point 2 of 3 set.');
+    } else if(radialPts.length===3){
+      // Complete 3-point radial measurement
+      if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
+      const circ=circumscribedCircle(radialPts[0],radialPts[1],radialPts[2]);
+      if(!circ){
+        announce('Points are collinear — cannot compute circle. Try again with different points.');
+        cancelMeasure();
+        measureHint.textContent='Click point 1 of 3 on the curve';
+        return;
+      }
+      const{center,radius,normal}=circ;
+      const diameter=radius*2;
+      const circumference=Math.PI*diameter;
+      const circLine=new THREE.Line(
+        makeCircleGeom(center,radius,normal,128),
+        new THREE.LineBasicMaterial({color:0xC4721A})
+      );
+      const centerDot=makeSphere(center,0xC4721A,modelSize*0.02);
+      scene.add(circLine);scene.add(centerDot);
+      const objs=[circLine,centerDot,...radialMarkers];
+      radialMarkers=[];
+      measureCount++;
+      const id=measureCount;
+      const text='r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4)+' units';
+      addMeasureRow(id,'radial',text,objs);
+      announce('Radial #'+id+': r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4));
+      radialPts=[];
+      measureHint.textContent='Click point 1 of 3 on the curve';
+    }
+  }
+});
+
+// ── D-pad & toolbar buttons ────────────────────────────────────────────────
 function doMove(dir){
   const ps=modelSize*0.04;
   const panMode=document.getElementById('btn-pan').classList.contains('active');
   if(panMode){if(dir==='up')panBy(0,ps);else if(dir==='down')panBy(0,-ps);else if(dir==='left')panBy(-ps,0);else panBy(ps,0);}
   else{if(dir==='up')rotateBy(0,-8);else if(dir==='down')rotateBy(0,8);else if(dir==='left')rotateBy(-8,0);else rotateBy(8,0);}
 }
-
 document.getElementById('dp-up').addEventListener('click',()=>doMove('up'));
 document.getElementById('dp-down').addEventListener('click',()=>doMove('down'));
 document.getElementById('dp-left').addEventListener('click',()=>doMove('left'));
@@ -642,66 +639,49 @@ document.getElementById('btn-right').addEventListener('click',()=>setView('right
 document.getElementById('btn-left').addEventListener('click',()=>setView('left'));
 document.getElementById('btn-top').addEventListener('click',()=>setView('top'));
 document.getElementById('btn-bottom').addEventListener('click',()=>setView('bottom'));
-document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode. D-pad rotates the model.');});
-document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode. D-pad pans the view.');});
-
-document.addEventListener('keydown',e=>{const tag=document.activeElement&&document.activeElement.tagName;if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;if(modal&&modal.style.display!=='none')return;const ps=modelSize*0.04;if(e.shiftKey){if(e.key==='ArrowLeft')panBy(-ps,0);else if(e.key==='ArrowRight')panBy(ps,0);else if(e.key==='ArrowUp')panBy(0,ps);else if(e.key==='ArrowDown')panBy(0,-ps);else return;}else{if(e.key==='ArrowLeft')rotateBy(-8,0);else if(e.key==='ArrowRight')rotateBy(8,0);else if(e.key==='ArrowUp')rotateBy(0,-8);else if(e.key==='ArrowDown')rotateBy(0,8);else if(e.key==='+'||e.key===']')zoomBy(0.85);else if(e.key==='-'||e.key==='[')zoomBy(1.18);else if(e.key==='r'||e.key==='R')resetCamera();else if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')setView('front');else if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')setView('back');else if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3')setView('right');else if(e.key==='4'||e.code==='Digit4'||e.code==='Numpad4')setView('left');else if(e.key==='5'||e.code==='Digit5'||e.code==='Numpad5')setView('top');else if(e.key==='6'||e.code==='Digit6'||e.code==='Numpad6')setView('bottom');else if(e.key==='w'||e.key==='W')toggleWireframe();else if(e.key==='l'||e.key==='L')setMeasureMode('linear');else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='Escape'){if(pendingPoint){cancelMeasure();announce('Cancelled.');}else if(measureMode)setMeasureMode(measureMode);}else return;}e.preventDefault();});
-
-function toScreen(v3){const v=v3.clone().project(camera);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
-function findSnapVertex(mx,my,threshold=18){if(!vertexPositions.length)return null;let best=null,bestDist=Infinity;for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<threshold&&d<bestDist){bestDist=d;best=v.clone();}}return best;}
-function getMousePageXY(e){const rect=canvas.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};}
-function getRayHit(e){if(!currentModel)return null;const rect=canvas.getBoundingClientRect();const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);const rc=new THREE.Raycaster();rc.setFromCamera(mouse,camera);const hits=rc.intersectObject(currentModel,true);return hits.length?hits[0].point.clone():null;}
-function removeSnapSphere(){if(snapSphere){scene.remove(snapSphere);snapSphere=null;}}
-function removePreviewLine(){if(previewLine){scene.remove(previewLine);previewLine=null;}}
-function removePreviewCircle(){if(previewCircle){scene.remove(previewCircle);previewCircle=null;}}
-function makeSphere(pt,color,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r||modelSize*0.012),new THREE.MeshBasicMaterial({color}));m.position.copy(pt);return m;}
-function makeCircleGeom(center,radius,normal,segments){const pts=[],q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal.clone().normalize());for(let i=0;i<=segments;i++){const a=(i/segments)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius).applyQuaternion(q).add(center));}return new THREE.BufferGeometry().setFromPoints(pts);}
-canvas.addEventListener('mousemove',e=>{if(!measureMode||!currentModel)return;const{x,y}=getMousePageXY(e);
-  // Priority: circle center/edge snap > vertex snap
-  const circleSnap=findSnapCircle(x,y);
-  const vertSnap=!circleSnap?findSnapVertex(x,y):null;
-  removeSnapSphere();removePreviewCircle();
-  if(circleSnap){
-    drawCircleSnap(circleSnap.circle, circleSnap.type);
-    snapIndicator.textContent=circleSnap.type==='center'?'Snapped to circle center (r='+circleSnap.circle.radius.toFixed(3)+')':'Snapped to circle edge';
-    snapIndicator.style.display='block';
-    snapIndicator.style.background='#00838F';
-  } else if(vertSnap){snapSphere=makeSphere(vertSnap,0xC4721A,modelSize*0.018);scene.add(snapSphere);snapIndicator.textContent='Snapped to vertex';snapIndicator.style.background='#C4721A';snapIndicator.style.display='block';}
-  else snapIndicator.style.display='none';if(pendingPoint){const hitPt=snap||(getRayHit(e));if(!hitPt)return;if(measureMode==='linear'){removePreviewLine();previewLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,hitPt]),new THREE.LineBasicMaterial({color:0x2B6A82}));scene.add(previewLine);}else{removePreviewCircle();const radius=pendingPoint.distanceTo(hitPt),normal=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();previewCircle=new THREE.Line(makeCircleGeom(pendingPoint,radius,normal,64),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(previewCircle);}}});
-canvas.addEventListener('mouseleave',()=>{removeSnapSphere();snapIndicator.style.display='none';});
-canvas.addEventListener('click',e=>{if(!measureMode||!currentModel||e.button!==0)return;const{x,y}=getMousePageXY(e);
-  const circleSnap=findSnapCircle(x,y);
-  const vertSnap=!circleSnap?findSnapVertex(x,y):null;
-  // If radial mode and we clicked a detected circle — auto-complete with known radius
-  if(measureMode==='radial'&&circleSnap&&!pendingPoint){
-    const dc=circleSnap.circle;
-    removePreviewCircle();
-    const id=++measureCount;
-    const radius=dc.radius,diameter=radius*2,circ=Math.PI*diameter;
-    const circObj=new THREE.Line(makeCircleGeom(dc.center,radius,dc.normal,128),new THREE.LineBasicMaterial({color:0x00BCD4}));
-    const sC=makeSphere(dc.center,0x00BCD4,modelSize*0.018);
-    scene.add(circObj);scene.add(sC);
-    const objs=[circObj,sC];
-    addMeasureRow(id,'radial','r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circ.toFixed(4)+' [auto-detected]',objs);
-    measureObjects.push({type:'measurement',id,obj:objs});
-    announce('Auto-detected circle: r='+radius.toFixed(4)+' units.');
-    return;
-  }
-  const hitPt=circleSnap?circleSnap.point:vertSnap||(getRayHit(e));if(!hitPt)return;if(!pendingPoint){pendingPoint=hitPt.clone();const s=makeSphere(hitPt,0x2B6A82);scene.add(s);measureObjects.push({type:'temp-marker',obj:s});measureHint.textContent=measureMode==='linear'?'Click point 2'+(snap?' (snapped)':''):'Click edge point'+(snap?' (snapped)':'');announce('Point 1 set. Click point 2.');}else{const pt2=hitPt.clone();removePreviewLine();removePreviewCircle();removeSnapSphere();snapIndicator.style.display='none';measureObjects.filter(o=>o.type==='temp-marker').forEach(t=>scene.remove(t.obj));measureObjects=measureObjects.filter(o=>o.type!=='temp-marker');measureCount++;const id=measureCount,objs=[];if(measureMode==='linear'){const dist=pendingPoint.distanceTo(pt2);const sA=makeSphere(pendingPoint,0x2B6A82),sB=makeSphere(pt2,0x2B6A82);const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,pt2]),new THREE.LineBasicMaterial({color:0x2B6A82}));scene.add(sA);scene.add(sB);scene.add(line);objs.push(sA,sB,line);addMeasureRow(id,'linear','Distance: '+dist.toFixed(4)+' units',objs);announce('Linear #'+id+': '+dist.toFixed(4)+' units.');}else{const radius=pendingPoint.distanceTo(pt2),diameter=radius*2,circ=Math.PI*diameter,normal=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();const circle=new THREE.Line(makeCircleGeom(pendingPoint,radius,normal,128),new THREE.LineBasicMaterial({color:0xC4721A}));const sC=makeSphere(pendingPoint,0xC4721A);const rl=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pendingPoint,pt2]),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(circle);scene.add(sC);scene.add(rl);objs.push(circle,sC,rl);addMeasureRow(id,'radial','r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circ.toFixed(4),objs);announce('Radial #'+id+': r='+radius.toFixed(4)+'.');}pendingPoint=null;measureHint.textContent=measureMode==='linear'?'Click point 1':'Click center point';}});
-function addMeasureRow(id,type,text,objs){document.getElementById('measure-panel').style.display='block';measureObjects.push({type:'measurement',id,obj:objs});const row=document.createElement('div');row.className='mrow';row.id='mrow-'+id;row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+(type==='linear'?'linear':'radial')+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete measurement '+id);del.style.cssText='padding:2px 7px;font-size:11px;';del.innerHTML='<i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i>';del.addEventListener('click',()=>deleteMeasure(id));row.appendChild(del);document.getElementById('measure-list').appendChild(row);}
-function deleteMeasure(id){const entry=measureObjects.find(o=>o.type==='measurement'&&o.id===id);if(entry)entry.obj.forEach(o=>scene.remove(o));measureObjects=measureObjects.filter(o=>!(o.type==='measurement'&&o.id===id));const row=document.getElementById('mrow-'+id);if(row)row.remove();if(!document.getElementById('measure-list').children.length)document.getElementById('measure-panel').style.display='none';announce('Measurement '+id+' deleted.');}
-function clearAllMeasurements(){measureObjects.filter(o=>o.type==='measurement').forEach(e=>e.obj.forEach(o=>scene.remove(o)));measureObjects=measureObjects.filter(o=>o.type!=='measurement');document.getElementById('measure-list').innerHTML='';document.getElementById('measure-panel').style.display='none';}
-document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAllMeasurements();announce('All measurements cleared.');});
-function cancelMeasure(){pendingPoint=null;removeSnapSphere();removePreviewLine();removePreviewCircle();snapIndicator.style.display='none';measureObjects.filter(o=>o.type==='temp-marker').forEach(t=>scene.remove(t.obj));measureObjects=measureObjects.filter(o=>o.type!=='temp-marker');}
-function setMeasureMode(mode){cancelMeasure();if(measureMode===mode){measureMode=null;controls.enabled=true;measureHint.style.display='none';document.getElementById('btn-linear').setAttribute('aria-pressed','false');document.getElementById('btn-linear').classList.remove('active');document.getElementById('btn-radial').setAttribute('aria-pressed','false');document.getElementById('btn-radial').classList.remove('active');announce('Measure mode off.');return;}measureMode=mode;controls.enabled=false;measureHint.style.display='block';measureHint.style.background=mode==='linear'?'rgba(43,106,130,0.92)':'rgba(196,114,26,0.92)';measureHint.textContent=mode==='linear'?'Click point 1 (snaps to vertices)':'Click center point (snaps to vertices)';document.getElementById('btn-linear').setAttribute('aria-pressed',String(mode==='linear'));document.getElementById('btn-linear').classList.toggle('active',mode==='linear');document.getElementById('btn-radial').setAttribute('aria-pressed',String(mode==='radial'));document.getElementById('btn-radial').classList.toggle('active',mode==='radial');announce((mode==='linear'?'Linear':'Radial')+' measure on.');}
+document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
+document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-linear').addEventListener('click',()=>setMeasureMode('linear'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMeasureMode('radial'));
-document.getElementById('btn-show-circles').addEventListener('click',toggleCircleOverlays);
+document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAllMeasurements();announce('All measurements cleared.');});
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  const tag=document.activeElement&&document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+  if(modal&&modal.style.display!=='none')return;
+  const ps=modelSize*0.04;
+  if(e.shiftKey){
+    if(e.key==='ArrowLeft')panBy(-ps,0);
+    else if(e.key==='ArrowRight')panBy(ps,0);
+    else if(e.key==='ArrowUp')panBy(0,ps);
+    else if(e.key==='ArrowDown')panBy(0,-ps);
+    else return;
+  } else {
+    if(e.key==='ArrowLeft')rotateBy(-8,0);
+    else if(e.key==='ArrowRight')rotateBy(8,0);
+    else if(e.key==='ArrowUp')rotateBy(0,-8);
+    else if(e.key==='ArrowDown')rotateBy(0,8);
+    else if(e.key==='+'||e.key===']')zoomBy(0.85);
+    else if(e.key==='-'||e.key==='[')zoomBy(1.18);
+    else if(e.key==='r'||e.key==='R')resetCamera();
+    else if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')setView('front');
+    else if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')setView('back');
+    else if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3')setView('right');
+    else if(e.key==='4'||e.code==='Digit4'||e.code==='Numpad4')setView('left');
+    else if(e.key==='5'||e.code==='Digit5'||e.code==='Numpad5')setView('top');
+    else if(e.key==='6'||e.code==='Digit6'||e.code==='Numpad6')setView('bottom');
+    else if(e.key==='w'||e.key==='W')toggleWireframe();
+    else if(e.key==='l'||e.key==='L')setMeasureMode('linear');
+    else if(e.key==='c'||e.key==='C')setMeasureMode('radial');
+    else if(e.key==='Escape'){cancelMeasure();if(measureMode)announce('Cancelled.');}
+    else return;
+  }
+  e.preventDefault();
+});
+
 })();
-
-
-
 </script>
 </body>
 </html>
