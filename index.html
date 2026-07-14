@@ -366,140 +366,173 @@ const VIEW_MAP={'front':['Front',v=>v.clone().add(new THREE.Vector3(0,0,1))],'ba
 function setView(key){if(!currentModel){announce('Load a model first — then use 1-6 for views.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
 function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.isMesh)return;const pos=child.geometry.attributes.position;if(!pos)return;const mat=child.matrixWorld;for(let i=0;i<pos.count;i++)vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));});}
 
-// ── Circle / hole center detection ─────────────────────────────────────────
-let detectedCircles = []; // {center, radius, normal, pts}
+// ── Circle / hole center detection — planar slice method ──────────────────
+let detectedCircles = [];
 
-function fitCircle3D(points) {
-  // Project points onto best-fit plane, fit circle in 2D, return 3D center + radius
-  if (points.length < 6) return null;
-  // Compute centroid
-  const cen = new THREE.Vector3();
-  points.forEach(p => cen.add(p));
-  cen.divideScalar(points.length);
-  // Compute normal via covariance (SVD approximation — use cross products of point pairs)
-  const v1 = new THREE.Vector3().subVectors(points[1], points[0]).normalize();
-  const v2 = new THREE.Vector3().subVectors(points[Math.floor(points.length/2)], points[0]).normalize();
-  const normal = new THREE.Vector3().crossVectors(v1, v2).normalize();
-  if (normal.length() < 0.1) return null;
-  // Build local 2D axes on the plane
-  const ax = new THREE.Vector3().crossVectors(normal, new THREE.Vector3(0,1,0));
-  if (ax.length() < 0.01) ax.set(1,0,0); else ax.normalize();
-  const ay = new THREE.Vector3().crossVectors(normal, ax).normalize();
-  // Project to 2D
-  const pts2d = points.map(p => {
-    const d = new THREE.Vector3().subVectors(p, cen);
-    return [d.dot(ax), d.dot(ay)];
-  });
-  // Algebraic circle fit (Pratt method simplified)
-  let sumX=0,sumY=0,sumX2=0,sumY2=0,sumXY=0,sumX3=0,sumY3=0,sumX2Y=0,sumXY2=0,n=pts2d.length;
-  pts2d.forEach(([x,y])=>{sumX+=x;sumY+=y;sumX2+=x*x;sumY2+=y*y;sumXY+=x*y;sumX3+=x*x*x;sumY3+=y*y*y;sumX2Y+=x*x*y;sumXY2+=x*y*y;});
-  const A=[[2*sumX2,2*sumXY,sumX],[2*sumXY,2*sumY2,sumY],[sumX,sumY,n]];
-  const b=[sumX3+sumXY2,sumX2Y+sumY3,sumX2+sumY2];
-  // Solve 3x3 via Cramer
-  function det3(m){return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);}
-  const D=det3(A);if(Math.abs(D)<1e-10)return null;
-  const cx=(det3([[b[0],A[0][1],A[0][2]],[b[1],A[1][1],A[1][2]],[b[2],A[2][1],A[2][2]]]))/D;
-  const cy=(det3([[A[0][0],b[0],A[0][2]],[A[1][0],b[1],A[1][2]],[A[2][0],b[2],A[2][2]]]))/D;
-  // Radius = mean distance from fitted center
+function fitCircle2D(pts2d) {
+  // Algebraic least-squares circle fit
+  const n = pts2d.length;
+  if (n < 5) return null;
+  let sX=0,sY=0,sX2=0,sY2=0,sXY=0,sX3=0,sY3=0,sX2Y=0,sXY2=0;
+  pts2d.forEach(([x,y])=>{sX+=x;sY+=y;sX2+=x*x;sY2+=y*y;sXY+=x*y;sX3+=x*x*x;sY3+=y*y*y;sX2Y+=x*x*y;sXY2+=x*y*y;});
+  // 3x3 linear system
+  const a11=2*sX2,a12=2*sXY,a13=sX;
+  const a21=2*sXY,a22=2*sY2,a23=sY;
+  const a31=sX,   a32=sY,   a33=n;
+  const b1=sX3+sXY2, b2=sX2Y+sY3, b3=sX2+sY2;
+  function det(a,b,c,d,e,f,g,h,i){return a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);}
+  const D=det(a11,a12,a13,a21,a22,a23,a31,a32,a33);
+  if(Math.abs(D)<1e-12) return null;
+  const cx=det(b1,a12,a13,b2,a22,a23,b3,a32,a33)/D;
+  const cy=det(a11,b1,a13,a21,b2,a23,a31,b3,a33)/D;
   const r=pts2d.reduce((s,[x,y])=>s+Math.sqrt((x-cx)**2+(y-cy)**2),0)/n;
-  if(r<modelSize*0.001||r>modelSize*2)return null;
-  // Check circularity — std dev of radii should be small
+  if(r<=0) return null;
+  // Circularity check — coefficient of variation of radii must be <10%
   const radii=pts2d.map(([x,y])=>Math.sqrt((x-cx)**2+(y-cy)**2));
-  const stdDev=Math.sqrt(radii.reduce((s,ri)=>s+(ri-r)**2,0)/n);
-  if(stdDev/r>0.12)return null; // reject non-circular
-  // Back to 3D
-  const center3=new THREE.Vector3().copy(cen).addScaledVector(ax,cx).addScaledVector(ay,cy);
-  return {center:center3, radius:r, normal:normal.clone(), pts:points};
+  const std=Math.sqrt(radii.reduce((s,ri)=>s+(ri-r)**2,0)/n);
+  if(std/r>0.10) return null;
+  // Angular coverage check — points should span >270° of the circle
+  const angles=pts2d.map(([x,y])=>Math.atan2(y-cy,x-cx));
+  angles.sort((a,b)=>a-b);
+  let maxGap=0;
+  for(let i=0;i<angles.length;i++){
+    const gap=(angles[(i+1)%angles.length]-angles[i]+2*Math.PI)%(2*Math.PI);
+    if(gap>maxGap)maxGap=gap;
+  }
+  if(maxGap>Math.PI*0.7) return null; // gap >126° means incomplete arc
+  return {cx, cy, r, std};
 }
 
 function detectCircles(obj) {
   detectedCircles = [];
-  const visited = new Set();
+  // Collect all world-space vertices from mesh
+  const allVerts = [];
   obj.traverse(child => {
     if (!child.isMesh) return;
     const pos = child.geometry.attributes.position;
     if (!pos) return;
     const mat = child.matrixWorld;
-    const verts = [];
     for (let i = 0; i < pos.count; i++) {
-      verts.push(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(mat));
+      allVerts.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));
     }
-    // Group vertices by proximity to find edge loops
-    // Use a grid-based approach: bin vertices, find clusters
-    const cellSize = modelSize * 0.015;
-    const bins = {};
-    verts.forEach((v, i) => {
-      const key = [Math.round(v.x/cellSize), Math.round(v.y/cellSize), Math.round(v.z/cellSize)].join(',');
-      if (!bins[key]) bins[key] = [];
-      bins[key].push(i);
-    });
-    // For each triangle, collect edge midpoints that appear on boundary edges
-    const edgeCount = {};
-    const tris = pos.count / 3;
-    for (let t = 0; t < tris; t++) {
-      const i0=t*3, i1=t*3+1, i2=t*3+2;
-      [[i0,i1],[i1,i2],[i2,i0]].forEach(([a,b]) => {
-        const k = [Math.min(a,b), Math.max(a,b)].join('-');
-        edgeCount[k] = (edgeCount[k]||0)+1;
+  });
+  if (allVerts.length < 9) return;
+
+  const box = new THREE.Box3();
+  allVerts.forEach(v => box.expandByPoint(v));
+  const size = new THREE.Vector3(); box.getSize(size);
+  const minR = modelSize * 0.005;
+  const maxR = modelSize * 0.8;
+
+  // Slice along all 3 axes with adaptive step
+  const AXES = [
+    {axis:'z', u:'x', v:'y', normal:new THREE.Vector3(0,0,1)},
+    {axis:'y', u:'x', v:'z', normal:new THREE.Vector3(0,1,0)},
+    {axis:'x', u:'y', v:'z', normal:new THREE.Vector3(1,0,0)},
+  ];
+
+  AXES.forEach(({axis,u,v,normal}) => {
+    const axisMin = box.min[axis], axisMax = box.max[axis];
+    const axisSize = axisMax - axisMin;
+    const numSlices = Math.min(60, Math.max(20, Math.round(axisSize / (modelSize*0.025))));
+    const thickness = axisSize / numSlices * 0.6;
+
+    for (let si = 0; si <= numSlices; si++) {
+      const sliceVal = axisMin + (si / numSlices) * axisSize;
+      // Collect vertices in this slice plane
+      const sliceVerts = allVerts.filter(p => Math.abs(p[axis] - sliceVal) < thickness);
+      if (sliceVerts.length < 8) continue;
+
+      // Project to 2D
+      const pts2d = sliceVerts.map(p => [p[u], p[v]]);
+
+      // Spatial clustering in 2D — find groups of points that might form circles
+      const cellSz = modelSize * 0.04;
+      const cells = {};
+      pts2d.forEach(([pu,pv],i) => {
+        const ck = Math.round(pu/cellSz)+','+Math.round(pv/cellSz);
+        if(!cells[ck])cells[ck]=[];
+        cells[ck].push(i);
+      });
+
+      // For each occupied cell, try clustering nearby points
+      const usedPts = new Set();
+      Object.values(cells).forEach(cellIdxs => {
+        cellIdxs.forEach(seed => {
+          if(usedPts.has(seed)) return;
+          const [su,sv] = pts2d[seed];
+          // Gather points within candidate radius range
+          const clusterR = modelSize * 0.35;
+          const cluster = pts2d.filter(([pu,pv],i) =>
+            !usedPts.has(i) && Math.hypot(pu-su,pv-sv) < clusterR
+          );
+          if(cluster.length < 8) return;
+          const fit = fitCircle2D(cluster);
+          if (!fit) return;
+          if (fit.r < minR || fit.r > maxR) return;
+          // Back to 3D
+          const center3 = new THREE.Vector3();
+          center3[axis] = sliceVal;
+          center3[u] = fit.cx;
+          center3[v] = fit.cy;
+          // Deduplicate
+          const isDup = detectedCircles.some(dc =>
+            dc.center.distanceTo(center3) < fit.r * 0.15 &&
+            Math.abs(dc.radius - fit.r) < fit.r * 0.1
+          );
+          if (!isDup) {
+            detectedCircles.push({
+              center: center3.clone(),
+              radius: fit.r,
+              normal: normal.clone(),
+              quality: 1 - fit.std/fit.r
+            });
+            cluster.forEach((_,i) => usedPts.add(i));
+          }
+        });
       });
     }
-    // Boundary edges appear once; collect their vertices
-    const boundaryVerts = new Set();
-    Object.entries(edgeCount).forEach(([k,c]) => {
-      if (c === 1) { const [a,b]=k.split('-').map(Number); boundaryVerts.add(a); boundaryVerts.add(b); }
-    });
-    if (boundaryVerts.size < 6) return;
-    const bvArr = [...boundaryVerts].map(i => ({idx:i, v:verts[i]}));
-    // Cluster boundary vertices by normal direction + plane
-    // Simple approach: cluster by proximity, try fitting circles to each cluster
-    const used = new Set();
-    bvArr.forEach(({idx, v}) => {
-      if (used.has(idx)) return;
-      // Find nearby boundary verts
-      const cluster = bvArr.filter(({idx:j, v:w}) => !used.has(j) && v.distanceTo(w) < modelSize*0.3);
-      if (cluster.length < 6) return;
-      const circle = fitCircle3D(cluster.map(c=>c.v));
-      if (circle) {
-        // Check not duplicate
-        const isDup = detectedCircles.some(dc => dc.center.distanceTo(circle.center) < circle.radius*0.1 && Math.abs(dc.radius-circle.radius)<circle.radius*0.1);
-        if (!isDup) {
-          detectedCircles.push(circle);
-          cluster.forEach(({idx:j})=>used.add(j));
-        }
-      }
-    });
   });
-  announce('Model loaded: '+detectedCircles.length+' circular feature'+(detectedCircles.length===1?'':'s')+' detected.');
+
+  // Sort by quality descending
+  detectedCircles.sort((a,b) => b.quality - a.quality);
+  announce('Model loaded. ' + detectedCircles.length + ' circular feature' + (detectedCircles.length===1?'':'s') + ' detected — hover in Radial mode to snap.');
 }
 
-function findSnapCircle(mx, my, threshold=28) {
-  // Returns {center, radius, normal} if mouse is near a detected circle center or edge
+function findSnapCircle(mx, my, threshold=32) {
   if (!detectedCircles.length) return null;
-  let bestCenter=null, bestEdge=null, bestCenterDist=Infinity, bestEdgeDist=Infinity;
+  let bestCenter=null, bestCenterDist=Infinity;
   detectedCircles.forEach(dc => {
+    // Snap to projected center
     const sc = toScreen(dc.center);
     const dCenter = Math.hypot(sc.x-mx, sc.y-my);
-    if (dCenter < threshold && dCenter < bestCenterDist) { bestCenterDist=dCenter; bestCenter=dc; }
-    // Also snap to circle edge: check if mouse is near the circle perimeter in screen space
-    const edgePt = dc.center.clone().addScaledVector(dc.normal.clone().cross(new THREE.Vector3(0,1,0.01).normalize()).normalize(), dc.radius);
-    const se = toScreen(edgePt);
-    const dEdge = Math.hypot(se.x-mx, se.y-my);
-    if (dEdge < threshold && dEdge < bestEdgeDist) { bestEdgeDist=dEdge; bestEdge=dc; }
+    if (dCenter < threshold && dCenter < bestCenterDist) {
+      bestCenterDist = dCenter; bestCenter = dc;
+    }
+    // Snap to perimeter — sample 16 points around circle
+    for(let i=0;i<16;i++){
+      const a=(i/16)*Math.PI*2;
+      const ax2=new THREE.Vector3().crossVectors(dc.normal,new THREE.Vector3(0,1,0.01)).normalize();
+      const ay2=new THREE.Vector3().crossVectors(dc.normal,ax2).normalize();
+      const edgePt=dc.center.clone().addScaledVector(ax2,Math.cos(a)*dc.radius).addScaledVector(ay2,Math.sin(a)*dc.radius);
+      const se=toScreen(edgePt);
+      const de=Math.hypot(se.x-mx,se.y-my);
+      if(de<threshold&&de<bestCenterDist){bestCenterDist=de;bestCenter=dc;}
+    }
   });
   if (bestCenter) return {type:'center', point:bestCenter.center.clone(), circle:bestCenter};
-  if (bestEdge) return {type:'edge', point:bestEdge.center.clone(), circle:bestEdge};
   return null;
 }
 
 function drawCircleSnap(circle, type) {
-  // Draw detected circle outline + center marker in cyan
   if (snapSphere) { scene.remove(snapSphere); snapSphere=null; }
-  // Center marker
-  snapSphere = makeSphere(circle.center, 0x00BCD4, modelSize*0.02);
+  snapSphere = makeSphere(circle.center, 0x00BCD4, modelSize*0.022);
   scene.add(snapSphere);
-  // Circle outline
   if (previewCircle) { scene.remove(previewCircle); previewCircle=null; }
-  previewCircle = new THREE.Line(makeCircleGeom(circle.center, circle.radius, circle.normal, 64), new THREE.LineBasicMaterial({color:0x00BCD4, linewidth:2}));
+  previewCircle = new THREE.Line(
+    makeCircleGeom(circle.center, circle.radius, circle.normal, 96),
+    new THREE.LineBasicMaterial({color:0x00BCD4})
+  );
   scene.add(previewCircle);
 }
 // ───────────────────────────────────────────────────────────────────────────
