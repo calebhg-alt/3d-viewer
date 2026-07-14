@@ -324,7 +324,7 @@ renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.2;
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x0F1923);
+scene.background=new THREE.Color(0x111C28);
 const camera=new THREE.PerspectiveCamera(45,1,0.001,10000);
 camera.position.set(0,1.5,4);
 // Orthographic camera — updated whenever ortho mode is active
@@ -348,10 +348,11 @@ function syncOrthoCamera(){
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=0.07;controls.screenSpacePanning=true;
 controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
-scene.add(new THREE.AmbientLight(0xffffff,0.7));
-const dir=new THREE.DirectionalLight(0xffffff,1.2);dir.position.set(5,10,7);scene.add(dir);
-const fill=new THREE.DirectionalLight(0x9FC8D6,0.3);fill.position.set(-5,-2,-5);scene.add(fill);
-const grid=new THREE.GridHelper(10,20,0x1A2A36,0x1A2A36);scene.add(grid);
+scene.add(new THREE.AmbientLight(0xffffff,0.55));
+const dir=new THREE.DirectionalLight(0xffffff,1.4);dir.position.set(5,10,7);scene.add(dir);
+const fill=new THREE.DirectionalLight(0x9FC8D6,0.4);fill.position.set(-5,-2,-5);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffffff,0.6);rim.position.set(-3,5,-8);scene.add(rim);
+const grid=new THREE.GridHelper(10,20,0x1E3245,0x162535);scene.add(grid);
 
 let currentModel=null,defaultCamPos=null,defaultTarget=null;
 let wireframeOn=false,measureMode=null,modelSize=1,vertexPositions=[];
@@ -387,7 +388,25 @@ function animateCameraTo(endPos,label){const startPos=camera.position.clone(),du
 const VIEW_MAP={'front':['Front',v=>v.clone().add(new THREE.Vector3(0,0,1))],'back':['Back',v=>v.clone().add(new THREE.Vector3(0,0,-1))],'right':['Right',v=>v.clone().add(new THREE.Vector3(1,0,0))],'left':['Left',v=>v.clone().add(new THREE.Vector3(-1,0,0))],'top':['Top',v=>v.clone().add(new THREE.Vector3(0,1,0.0001))],'bottom':['Bottom',v=>v.clone().add(new THREE.Vector3(0,-1,0.0001))]};
 function setView(key){if(!currentModel){announce('Load a model first.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
 function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.isMesh)return;const pos=child.geometry.attributes.position;if(!pos)return;const mat=child.matrixWorld;for(let i=0;i<pos.count;i++)vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));});}
-function makeMat(){return new THREE.MeshStandardMaterial({color:0x7BAEBE,roughness:0.55,metalness:0.25,side:THREE.DoubleSide});}
+function makeMat(){return new THREE.MeshStandardMaterial({color:0x9BBFD4,roughness:0.45,metalness:0.15,side:THREE.DoubleSide});}
+function makeEdgeMat(){return new THREE.LineBasicMaterial({color:0x1A3A4A,linewidth:1});}
+
+function addEdgeLines(obj){
+  // Add dark edge lines to all meshes for better silhouette definition
+  obj.traverse(child=>{
+    if(!child.isMesh) return;
+    try{
+      const edges=new THREE.EdgesGeometry(child.geometry,15); // 15deg threshold
+      const line=new THREE.LineSegments(edges,makeEdgeMat());
+      line.userData.isEdgeLine=true;
+      // Match the mesh's world transform
+      line.position.copy(child.position);
+      line.rotation.copy(child.rotation);
+      line.scale.copy(child.scale);
+      child.parent.add(line);
+    }catch(e){console.warn('Edge line error:',e);}
+  });
+}
 function loadModelFromURL(url,label){
   const ext=url.split('?')[0].split('.').pop().toLowerCase();
   document.getElementById('loading-indicator').style.display='flex';
@@ -396,7 +415,7 @@ function loadModelFromURL(url,label){
   announce('Loading '+label+'…');
   cancelMeasure();clearAllMeasurements();
   if(currentModel){scene.remove(currentModel);currentModel=null;}
-  const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>extractVertices(currentModel),150);document.getElementById('loading-indicator').style.display='none';document.getElementById('model-status').textContent='✓ Loaded';announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');};
+  const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>{extractVertices(currentModel);addEdgeLines(currentModel);},150);document.getElementById('loading-indicator').style.display='none';document.getElementById('model-status').textContent='✓ Loaded';announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');};
   const fail=()=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';document.getElementById('model-status').textContent='⚠ Not found';sel.value='';announce('Could not load '+label+'. Check file exists at: '+url);};
   if(ext==='stl'){fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}).catch(e=>{console.error(e);fail();});}
   else if(ext==='glb'||ext==='gltf'){new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);}
