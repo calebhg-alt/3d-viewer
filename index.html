@@ -271,7 +271,7 @@ const INSTRUCTOR_PIN='7018';
 const MODELS=[
   {label:'Bracket 1',                url:'models/obj%202.stl',              code:'ALPHA-101'},
   {label:'Bracket 2',                url:'models/Bracket%202.STL',    code:'BETA-202'},
-  {label:'Bracket 3', url:'models/Bracket%203.STL',             code:'GAMA-303'},
+  {label:'Model 03 — Placeholder C', url:'models/model-03.stl',             code:'GAMA-303'},
   {label:'Model 04 — Placeholder D', url:'models/model-04.stl',             code:'DELTA-404'},
   {label:'Model 05 — Placeholder E', url:'models/model-05.glb',             code:'ENG-505'},
   {label:'Model 06 — Placeholder F', url:'models/model-06.glb',             code:'FOXT-606'},
@@ -360,36 +360,24 @@ function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.
 let detectedCircles = [];
 
 function fitCircle2D(pts2d) {
-  // Algebraic least-squares circle fit
   const n = pts2d.length;
-  if (n < 5) return null;
+  if (n < 4) return null;
   let sX=0,sY=0,sX2=0,sY2=0,sXY=0,sX3=0,sY3=0,sX2Y=0,sXY2=0;
   pts2d.forEach(([x,y])=>{sX+=x;sY+=y;sX2+=x*x;sY2+=y*y;sXY+=x*y;sX3+=x*x*x;sY3+=y*y*y;sX2Y+=x*x*y;sXY2+=x*y*y;});
-  // 3x3 linear system
-  const a11=2*sX2,a12=2*sXY,a13=sX;
-  const a21=2*sXY,a22=2*sY2,a23=sY;
-  const a31=sX,   a32=sY,   a33=n;
-  const b1=sX3+sXY2, b2=sX2Y+sY3, b3=sX2+sY2;
+  const a11=2*sX2,a12=2*sXY,a13=sX,a21=2*sXY,a22=2*sY2,a23=sY,a31=sX,a32=sY,a33=n;
+  const b1=sX3+sXY2,b2=sX2Y+sY3,b3=sX2+sY2;
   function det(a,b,c,d,e,f,g,h,i){return a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);}
   const D=det(a11,a12,a13,a21,a22,a23,a31,a32,a33);
   if(Math.abs(D)<1e-12) return null;
   const cx=det(b1,a12,a13,b2,a22,a23,b3,a32,a33)/D;
   const cy=det(a11,b1,a13,a21,b2,a23,a31,b3,a33)/D;
-  const r=pts2d.reduce((s,[x,y])=>s+Math.sqrt((x-cx)**2+(y-cy)**2),0)/n;
-  if(r<=0) return null;
-  // Circularity check — coefficient of variation of radii must be <10%
   const radii=pts2d.map(([x,y])=>Math.sqrt((x-cx)**2+(y-cy)**2));
+  const r=radii.reduce((s,ri)=>s+ri,0)/n;
+  if(r<=0) return null;
   const std=Math.sqrt(radii.reduce((s,ri)=>s+(ri-r)**2,0)/n);
-  if(std/r>0.10) return null;
-  // Angular coverage check — points should span >270° of the circle
-  const angles=pts2d.map(([x,y])=>Math.atan2(y-cy,x-cx));
-  angles.sort((a,b)=>a-b);
-  let maxGap=0;
-  for(let i=0;i<angles.length;i++){
-    const gap=(angles[(i+1)%angles.length]-angles[i]+2*Math.PI)%(2*Math.PI);
-    if(gap>maxGap)maxGap=gap;
-  }
-  if(maxGap>Math.PI*0.7) return null; // gap >126° means incomplete arc
+  // Only check std/r — no angular coverage requirement
+  // (through-holes at angle only show partial arc but are still valid circles)
+  if(std/r>0.12) return null;
   return {cx, cy, r, std};
 }
 
@@ -537,8 +525,8 @@ function detectCircles(obj) {
           if(cl.length<4) return;
           const fit=fitCircle2D(cl);
           if(!fit||fit.r<minR||fit.r>maxR) return;
-          const ring=cl.filter(([pu,pv])=>Math.abs(Math.hypot(pu-fit.cx,pv-fit.cy)-fit.r)<fit.r*0.15);
-          if(ring.length<4) return;
+          const ring=cl.filter(([pu,pv])=>Math.abs(Math.hypot(pu-fit.cx,pv-fit.cy)-fit.r)<fit.r*0.25);
+          if(ring.length<3) return;
           const refit=fitCircle2D(ring);
           if(!refit||refit.r<minR||refit.r>maxR) return;
           const c3=new THREE.Vector3();
