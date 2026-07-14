@@ -119,6 +119,8 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-clear-all" aria-label="Clear all measurements"><i class="ti ti-trash" style="font-size:14px;" aria-hidden="true"></i>Clear</button>
     <button class="tb-btn" id="btn-kbd" aria-expanded="false" aria-controls="kbd-panel" aria-label="Keyboard shortcuts"><i class="ti ti-keyboard" style="font-size:14px;" aria-hidden="true"></i></button>
+    <div class="tb-sep" role="separator"></div>
+    <button class="tb-btn" id="btn-ortho" aria-pressed="false" aria-label="Toggle orthographic projection"><i class="ti ti-box" style="font-size:14px;" aria-hidden="true"></i>Ortho</button>
   </div>
 
   <div id="kbd-panel" class="kbd-panel" role="region" aria-label="Keyboard shortcuts">
@@ -129,6 +131,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div class="kbd-row"><span>Reset</span><span><kbd>R</kbd></span></div>
     <div class="kbd-row"><span>Linear</span><span><kbd>L</kbd> then 2 clicks</span></div>
     <div class="kbd-row"><span>Radial</span><span><kbd>C</kbd> then 3 clicks</span></div>
+    <div class="kbd-row"><span>Ortho toggle</span><span><kbd>O</kbd></span></div>
     <div class="kbd-row"><span>Wireframe</span><span><kbd>W</kbd></span></div>
     <div class="kbd-row"><span>Cancel</span><span><kbd>Esc</kbd></span></div>
   </div>
@@ -165,6 +168,9 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
         <button class="vg-btn" id="btn-back" aria-label="Back view">Bk</button>
         <button class="vg-btn" id="btn-bottom" aria-label="Bottom view">Bt</button>
         <button class="vg-btn" id="btn-left" aria-label="Left view">L</button>
+        <button class="vg-btn" id="btn-iso-fl" aria-label="Isometric front-left view" style="font-size:10px;">ISO</button>
+        <button class="vg-btn" id="btn-iso-fr" aria-label="Isometric front-right view" style="font-size:10px;">ISO2</button>
+        <button class="vg-btn" id="btn-iso-br" aria-label="Isometric back-right view" style="font-size:10px;">ISO3</button>
       </div>
     </div>
     <div class="ctrl-section" style="align-items:flex-start;">
@@ -321,6 +327,24 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0F1923);
 const camera=new THREE.PerspectiveCamera(45,1,0.001,10000);
 camera.position.set(0,1.5,4);
+// Orthographic camera — updated whenever ortho mode is active
+let orthoCamera=new THREE.OrthographicCamera(-1,1,1,-1,0.001,10000);
+let isOrtho=false;
+function getActiveCamera(){return isOrtho?orthoCamera:camera;}
+function syncOrthoCamera(){
+  // Match ortho camera position/target to perspective camera
+  orthoCamera.position.copy(camera.position);
+  orthoCamera.quaternion.copy(camera.quaternion);
+  // Set ortho frustum based on distance to target and viewport size
+  const dist=camera.position.distanceTo(controls.target);
+  const aspect=viewport.clientWidth/viewport.clientHeight;
+  const halfH=dist*Math.tan((camera.fov/2)*(Math.PI/180));
+  const halfW=halfH*aspect;
+  orthoCamera.left=-halfW; orthoCamera.right=halfW;
+  orthoCamera.top=halfH; orthoCamera.bottom=-halfH;
+  orthoCamera.near=0.001; orthoCamera.far=camera.far;
+  orthoCamera.updateProjectionMatrix();
+}
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=0.07;controls.screenSpacePanning=true;
 controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
@@ -338,9 +362,19 @@ let linearPt1=null,linearMarker1=null,linearPreview=null;
 let radialPts=[],radialMarkers=[],radialPreview=null;
 let snapSphere=null;
 
-function resize(){const w=viewport.clientWidth,h=viewport.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
+function resize(){
+  const w=viewport.clientWidth,h=viewport.clientHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+  if(isOrtho)syncOrthoCamera();
+}
 resize();new ResizeObserver(resize).observe(viewport);
-(function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+(function loop(){
+  requestAnimationFrame(loop);
+  controls.update();
+  if(isOrtho)syncOrthoCamera();
+  renderer.render(scene,isOrtho?orthoCamera:camera);
+})();
 
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
 canvas.addEventListener('mousedown',e=>{if(e.button!==2)return;e.preventDefault();rightDragActive=true;rightDragStart={x:e.clientX,y:e.clientY};rightDragCamStart=camera.position.clone();});
@@ -377,9 +411,9 @@ function resetCamera(){if(!defaultCamPos)return;animateCameraTo(defaultCamPos,'H
 function toggleWireframe(){wireframeOn=!wireframeOn;const btn=document.getElementById('btn-wire');btn.setAttribute('aria-pressed',String(wireframeOn));btn.classList.toggle('active',wireframeOn);if(currentModel)currentModel.traverse(c=>{if(c.isMesh)c.material.wireframe=wireframeOn;});announce('Wireframe '+(wireframeOn?'on':'off')+'.');}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function toScreen(v3){const v=v3.clone().project(camera);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
+function toScreen(v3){const cam=isOrtho?orthoCamera:camera;const v=v3.clone().project(cam);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
 function getMouseXY(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
-function getRayHit(e){if(!currentModel)return null;const r=canvas.getBoundingClientRect();const mouse=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);const rc=new THREE.Raycaster();rc.setFromCamera(mouse,camera);const hits=rc.intersectObject(currentModel,true);return hits.length?hits[0].point.clone():null;}
+function getRayHit(e){if(!currentModel)return null;const r=canvas.getBoundingClientRect();const mouse=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);const rc=new THREE.Raycaster();rc.setFromCamera(mouse,isOrtho?orthoCamera:camera);const hits=rc.intersectObject(currentModel,true);return hits.length?hits[0].point.clone():null;}
 function findSnapVertex(mx,my,threshold=18){if(!vertexPositions.length)return null;let best=null,bestDist=Infinity;for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<threshold&&d<bestDist){bestDist=d;best=v.clone();}}return best;}
 function makeSphere(pt,color,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r||modelSize*0.014),new THREE.MeshBasicMaterial({color}));m.position.copy(pt);return m;}
 function makeCircleGeom(center,radius,normal,segments){const pts=[],q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal.clone().normalize());for(let i=0;i<=segments;i++){const a=(i/segments)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius).applyQuaternion(q).add(center));}return new THREE.BufferGeometry().setFromPoints(pts);}
@@ -639,6 +673,39 @@ document.getElementById('btn-right').addEventListener('click',()=>setView('right
 document.getElementById('btn-left').addEventListener('click',()=>setView('left'));
 document.getElementById('btn-top').addEventListener('click',()=>setView('top'));
 document.getElementById('btn-bottom').addEventListener('click',()=>setView('bottom'));
+// ── Orthographic toggle ────────────────────────────────────────────────────
+function toggleOrtho(){
+  isOrtho=!isOrtho;
+  const btn=document.getElementById('btn-ortho');
+  btn.setAttribute('aria-pressed',String(isOrtho));
+  btn.classList.toggle('active',isOrtho);
+  if(isOrtho){syncOrthoCamera();announce('Orthographic view — no perspective distortion.');}
+  else{announce('Perspective view.');}
+}
+document.getElementById('btn-ortho').addEventListener('click',toggleOrtho);
+
+// ── Isometric views ─────────────────────────────────────────────────────────
+// Isometric: camera at equal angles to X, Y, Z axes (30° elevation, 45° azimuth variants)
+function setIsoView(variant){
+  if(!currentModel){announce('Load a model first.');return;}
+  const d=camera.position.distanceTo(controls.target)||modelSize*2.5;
+  const t=controls.target.clone();
+  // Standard isometric angles: elevation = arctan(1/sqrt(2)) ≈ 35.264°
+  // Azimuth variants: FL=225°, FR=315°, BR=45°, BL=135°
+  const azimuths={fl:225,fr:315,br:45,bl:135};
+  const az=(azimuths[variant]||225)*(Math.PI/180);
+  const el=Math.atan(1/Math.sqrt(2)); // ~35.264°
+  const x=t.x+d*Math.cos(el)*Math.sin(az);
+  const y=t.y+d*Math.sin(el);
+  const z=t.z+d*Math.cos(el)*Math.cos(az);
+  const endPos=new THREE.Vector3(x,y,z);
+  const labels={fl:'ISO Front-Left',fr:'ISO Front-Right',br:'ISO Back-Right',bl:'ISO Back-Left'};
+  animateCameraTo(endPos,labels[variant]||'Isometric');
+}
+document.getElementById('btn-iso-fl').addEventListener('click',()=>setIsoView('fl'));
+document.getElementById('btn-iso-fr').addEventListener('click',()=>setIsoView('fr'));
+document.getElementById('btn-iso-br').addEventListener('click',()=>setIsoView('br'));
+
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-linear').addEventListener('click',()=>setMeasureMode('linear'));
@@ -672,7 +739,7 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='4'||e.code==='Digit4'||e.code==='Numpad4')setView('left');
     else if(e.key==='5'||e.code==='Digit5'||e.code==='Numpad5')setView('top');
     else if(e.key==='6'||e.code==='Digit6'||e.code==='Numpad6')setView('bottom');
-    else if(e.key==='w'||e.key==='W')toggleWireframe();
+    else if(e.key==='o'||e.key==='O')toggleOrtho();else if(e.key==='w'||e.key==='W')toggleWireframe();
     else if(e.key==='l'||e.key==='L')setMeasureMode('linear');
     else if(e.key==='c'||e.key==='C')setMeasureMode('radial');
     else if(e.key==='Escape'){cancelMeasure();if(measureMode)announce('Cancelled.');}
