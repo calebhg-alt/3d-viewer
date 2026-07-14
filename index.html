@@ -280,7 +280,7 @@ const INSTRUCTOR_PIN='7018';
 // Example: "obj 2.stl" becomes "obj%202.stl"
 const MODELS=[
   {label:'Bracket 1',            url:'models/obj%202.stl',     code:'ALPHA-101'},
-  {label:'Bracket 2', url:'models/Bracket%202.STL',code:'BETA-202'},
+  {label:'Model 02 — Placeholder B', url:'models/model-02.stl',code:'BETA-202'},
   {label:'Model 03 — Placeholder C', url:'models/model-03.stl',code:'GAMA-303'},
   {label:'Model 04 — Placeholder D', url:'models/model-04.stl',code:'DELTA-404'},
   {label:'Model 05 — Placeholder E', url:'models/model-05.glb',code:'ENG-505'},
@@ -405,26 +405,29 @@ function fitCircle2D(pts2d) {
 
 function detectCircles(obj) {
   detectedCircles = [];
-  // Collect all world-space vertices from mesh
   const allVerts = [];
   obj.traverse(child => {
     if (!child.isMesh) return;
     const pos = child.geometry.attributes.position;
     if (!pos) return;
     const mat = child.matrixWorld;
-    for (let i = 0; i < pos.count; i++) {
+    for (let i = 0; i < pos.count; i++)
       allVerts.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));
-    }
   });
-  if (allVerts.length < 9) return;
+  if (allVerts.length < 9) { announce('Model loaded. No geometry found for circle detection.'); return; }
 
+  // Compute actual bounding box of model
   const box = new THREE.Box3();
   allVerts.forEach(v => box.expandByPoint(v));
-  const size = new THREE.Vector3(); box.getSize(size);
-  const minR = modelSize * 0.005;
-  const maxR = modelSize * 0.8;
+  const boxSize = new THREE.Vector3(); box.getSize(boxSize);
+  const S = Math.max(boxSize.x, boxSize.y, boxSize.z); // largest dimension
 
-  // Slice along all 3 axes with adaptive step
+  // Scale-adaptive thresholds based on actual model extents
+  const minR = S * 0.004;   // minimum hole radius = 0.4% of model size
+  const maxR = S * 0.6;     // maximum = 60% of model size
+  const sliceThick = S * 0.012; // slice thickness
+  const clusterDiam = S * 0.7;  // max cluster diameter to search
+
   const AXES = [
     {axis:'z', u:'x', v:'y', normal:new THREE.Vector3(0,0,1)},
     {axis:'y', u:'x', v:'z', normal:new THREE.Vector3(0,1,0)},
@@ -432,71 +435,66 @@ function detectCircles(obj) {
   ];
 
   AXES.forEach(({axis,u,v,normal}) => {
-    const axisMin = box.min[axis], axisMax = box.max[axis];
-    const axisSize = axisMax - axisMin;
-    const numSlices = Math.min(60, Math.max(20, Math.round(axisSize / (modelSize*0.025))));
-    const thickness = axisSize / numSlices * 0.6;
+    const axMin=box.min[axis], axMax=box.max[axis], axSpan=axMax-axMin;
+    // More slices = better detection; cap at 80
+    const nSlices = Math.min(80, Math.max(30, Math.round(axSpan/sliceThick)));
+    for (let si=0; si<=nSlices; si++) {
+      const sliceVal = axMin + (si/nSlices)*axSpan;
+      const slicePts = allVerts.filter(p=>Math.abs(p[axis]-sliceVal)<sliceThick);
+      if (slicePts.length < 8) continue;
+      const pts2d = slicePts.map(p=>[p[u],p[v]]);
 
-    for (let si = 0; si <= numSlices; si++) {
-      const sliceVal = axisMin + (si / numSlices) * axisSize;
-      // Collect vertices in this slice plane
-      const sliceVerts = allVerts.filter(p => Math.abs(p[axis] - sliceVal) < thickness);
-      if (sliceVerts.length < 8) continue;
-
-      // Project to 2D
-      const pts2d = sliceVerts.map(p => [p[u], p[v]]);
-
-      // Spatial clustering in 2D — find groups of points that might form circles
-      const cellSz = modelSize * 0.04;
-      const cells = {};
-      pts2d.forEach(([pu,pv],i) => {
-        const ck = Math.round(pu/cellSz)+','+Math.round(pv/cellSz);
-        if(!cells[ck])cells[ck]=[];
-        cells[ck].push(i);
+      // Try every point as a potential cluster seed
+      // Use a coarser grid to find candidate seeds efficiently
+      const gridSz = S * 0.08;
+      const grid = {};
+      pts2d.forEach(([pu,pv],i)=>{
+        const gk=Math.floor(pu/gridSz)+','+Math.floor(pv/gridSz);
+        if(!grid[gk])grid[gk]=[];
+        grid[gk].push(i);
       });
 
-      // For each occupied cell, try clustering nearby points
-      const usedPts = new Set();
-      Object.values(cells).forEach(cellIdxs => {
-        cellIdxs.forEach(seed => {
-          if(usedPts.has(seed)) return;
-          const [su,sv] = pts2d[seed];
-          // Gather points within candidate radius range
-          const clusterR = modelSize * 0.35;
-          const cluster = pts2d.filter(([pu,pv],i) =>
-            !usedPts.has(i) && Math.hypot(pu-su,pv-sv) < clusterR
-          );
-          if(cluster.length < 8) return;
-          const fit = fitCircle2D(cluster);
-          if (!fit) return;
-          if (fit.r < minR || fit.r > maxR) return;
-          // Back to 3D
-          const center3 = new THREE.Vector3();
-          center3[axis] = sliceVal;
-          center3[u] = fit.cx;
-          center3[v] = fit.cy;
-          // Deduplicate
-          const isDup = detectedCircles.some(dc =>
-            dc.center.distanceTo(center3) < fit.r * 0.15 &&
-            Math.abs(dc.radius - fit.r) < fit.r * 0.1
-          );
-          if (!isDup) {
-            detectedCircles.push({
-              center: center3.clone(),
-              radius: fit.r,
-              normal: normal.clone(),
-              quality: 1 - fit.std/fit.r
-            });
-            cluster.forEach((_,i) => usedPts.add(i));
-          }
+      // For each grid cell with enough points, try a circle fit
+      Object.values(grid).forEach(seedIdxs=>{
+        if(seedIdxs.length<4) return;
+        const [su,sv]=pts2d[seedIdxs[0]];
+        // Gather all pts within clusterDiam of seed
+        const cluster=pts2d.filter(([pu,pv])=>Math.hypot(pu-su,pv-sv)<clusterDiam);
+        if(cluster.length<8) return;
+        const fit=fitCircle2D(cluster);
+        if(!fit) return;
+        if(fit.r<minR||fit.r>maxR) return;
+        // Only keep points that are actually near the fitted circle perimeter
+        const ringPts=cluster.filter(([pu,pv])=>{
+          const d=Math.abs(Math.hypot(pu-fit.cx,pv-fit.cy)-fit.r);
+          return d<fit.r*0.18;
         });
+        if(ringPts.length<8) return;
+        // Refit with just ring points for better accuracy
+        const fit2=fitCircle2D(ringPts);
+        if(!fit2||fit2.r<minR||fit2.r>maxR) return;
+        const center3=new THREE.Vector3();
+        center3[axis]=sliceVal; center3[u]=fit2.cx; center3[v]=fit2.cy;
+        const isDup=detectedCircles.some(dc=>
+          dc.center.distanceTo(center3)<fit2.r*0.2 &&
+          Math.abs(dc.radius-fit2.r)<fit2.r*0.15
+        );
+        if(!isDup){
+          detectedCircles.push({
+            center:center3.clone(),
+            radius:fit2.r,
+            normal:normal.clone(),
+            quality:1-fit2.std/fit2.r
+          });
+        }
       });
     }
   });
 
-  // Sort by quality descending
-  detectedCircles.sort((a,b) => b.quality - a.quality);
-  announce('Model loaded. ' + detectedCircles.length + ' circular feature' + (detectedCircles.length===1?'':'s') + ' detected — hover in Radial mode to snap.');
+  detectedCircles.sort((a,b)=>b.quality-a.quality);
+  // Keep top 50 to avoid clutter
+  if(detectedCircles.length>50) detectedCircles=detectedCircles.slice(0,50);
+  announce('Model loaded. '+detectedCircles.length+' circular feature'+(detectedCircles.length===1?'':'s')+' detected — hover in Radial mode to snap.');
 }
 
 function findSnapCircle(mx, my, threshold=32) {
