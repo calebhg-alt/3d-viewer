@@ -56,6 +56,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 .mbadge{font-size:11px;padding:1px 7px;border-radius:5px;font-weight:500;}
 .mbadge-linear{background:#E6F2F6;color:var(--avc-steel);}
 .mbadge-radial{background:var(--avc-orange-bg);color:var(--avc-orange);}
+.mbadge-angle{background:#EDE7F6;color:#5E35B1;}
 #code-modal{position:absolute;inset:0;background:rgba(10,14,25,0.88);display:none;align-items:center;justify-content:center;z-index:100;}
 #code-box{background:white;border:1px solid #CBD5DC;border-radius:10px;padding:24px 26px;width:300px;display:flex;flex-direction:column;gap:14px;}
 #code-box h2{font-size:15px;font-weight:500;color:var(--avc-burgundy);margin:0;display:flex;align-items:center;gap:8px;}
@@ -113,6 +114,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — click 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
     <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — click 3 points on any curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
+    <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — click 3 points: vertex then two arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i>Wireframe</button>
     <button class="tb-btn" id="btn-reset" aria-label="Reset camera"><i class="ti ti-refresh" style="font-size:14px;" aria-hidden="true"></i>Reset</button>
@@ -131,6 +133,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div class="kbd-row"><span>Reset</span><span><kbd>R</kbd></span></div>
     <div class="kbd-row"><span>Linear</span><span><kbd>L</kbd> then 2 clicks</span></div>
     <div class="kbd-row"><span>Radial</span><span><kbd>C</kbd> then 3 clicks</span></div>
+    <div class="kbd-row"><span>Angle</span><span><kbd>A</kbd> then 3 clicks</span></div>
     <div class="kbd-row"><span>Ortho toggle</span><span><kbd>O</kbd></span></div>
     <div class="kbd-row"><span>Wireframe</span><span><kbd>W</kbd></span></div>
     <div class="kbd-row"><span>Cancel</span><span><kbd>Esc</kbd></span></div>
@@ -263,8 +266,8 @@ const MODELS=[
   {label:'Bracket 1',                 url:'models/obj%202.stl',           code:'ALPHA-101'},
   {label:'Bracket 2',                 url:'models/Bracket%202.STL',       code:'BETA-202'},
   {label:'Bracket 3',                 url:'models/Bracket%203.STL',       code:'BRKT-303'},
-  {label:'Bracket 4',  url:'models/Bracket%204.STL',          code:'DELTA-404'},
-  {label:'Bracket 5',  url:'models/Bracket%205.stl',          code:'ENG-505'},
+  {label:'Model 04 — Placeholder D',  url:'models/model-04.stl',          code:'DELTA-404'},
+  {label:'Model 05 — Placeholder E',  url:'models/model-05.glb',          code:'ENG-505'},
   {label:'Model 06 — Placeholder F',  url:'models/model-06.glb',          code:'FOXT-606'},
   {label:'Model 07 — Placeholder G',  url:'models/model-07.obj',          code:'GOLF-707'},
   {label:'Model 08 — Placeholder H',  url:'models/model-08.obj',          code:'HOTEL-808'},
@@ -361,6 +364,10 @@ let rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
 // Per-mode state
 let linearPt1=null,linearMarker1=null,linearPreview=null;
 let radialPts=[],radialMarkers=[],radialPreview=null;
+// Angle state: click vertex (pt1), then two arm points (pt2, pt3)
+let anglePts=[],angleMarkers=[];
+// Stored circle centers from radial measurements (for snap)
+let circleCenters=[];
 let snapSphere=null;
 
 function resize(){
@@ -464,17 +471,83 @@ function circumscribedCircle(p1,p2,p3){
   return{center,radius,normal};
 }
 
+// ── Angle between two vectors (3 clicks: vertex, arm1, arm2) ──────────────
+function computeAngle(vertex, arm1, arm2){
+  const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
+  const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
+  const dot=Math.max(-1,Math.min(1,v1.dot(v2)));
+  return THREE.MathUtils.radToDeg(Math.acos(dot));
+}
+
+function makeAngleArc(vertex,arm1,arm2,radius){
+  // Draw an arc in the plane of the 3 points showing the angle
+  const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
+  const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
+  const normal=new THREE.Vector3().crossVectors(v1,v2).normalize();
+  if(normal.length()<0.001) return null;
+  const angleDeg=computeAngle(vertex,arm1,arm2);
+  const angleRad=THREE.MathUtils.degToRad(angleDeg);
+  const pts=[];
+  const segments=48;
+  for(let i=0;i<=segments;i++){
+    const t=(i/segments)*angleRad;
+    // Rodrigues rotation of v1 around normal by t
+    const cosT=Math.cos(t),sinT=Math.sin(t);
+    const rotated=new THREE.Vector3()
+      .addScaledVector(v1,cosT)
+      .addScaledVector(new THREE.Vector3().crossVectors(normal,v1),sinT)
+      .addScaledVector(normal,normal.dot(v1)*(1-cosT));
+    pts.push(new THREE.Vector3().copy(vertex).addScaledVector(rotated,radius));
+  }
+  return new THREE.BufferGeometry().setFromPoints(pts);
+}
+
+function makeAngleLabel(vertex,arm1,arm2,angleDeg,radius,id){
+  // Create a text sprite showing the angle at the arc midpoint
+  const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
+  const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
+  const mid=new THREE.Vector3().addVectors(v1,v2).normalize();
+  const labelPos=new THREE.Vector3().copy(vertex).addScaledVector(mid,radius*1.4);
+  // Use a canvas texture for the label
+  const canvas2=document.createElement('canvas');
+  canvas2.width=256;canvas2.height=64;
+  const ctx2=canvas2.getContext('2d');
+  ctx2.fillStyle='rgba(94,53,177,0.9)';
+  ctx2.beginPath();ctx2.roundRect(4,4,248,56,10);ctx2.fill();
+  ctx2.fillStyle='white';ctx2.font='bold 28px system-ui';
+  ctx2.textAlign='center';ctx2.textBaseline='middle';
+  ctx2.fillText(angleDeg.toFixed(2)+'°',128,34);
+  const tex=new THREE.CanvasTexture(canvas2);
+  const mat=new THREE.SpriteMaterial({map:tex,depthTest:false});
+  const sprite=new THREE.Sprite(mat);
+  sprite.position.copy(labelPos);
+  const scale=modelSize*0.5;
+  sprite.scale.set(scale,scale/4,1);
+  return sprite;
+}
+
+// Find snap to stored circle centers
+function findSnapCircleCenter(mx,my,threshold=22){
+  if(!circleCenters.length) return null;
+  let best=null,bestDist=Infinity;
+  circleCenters.forEach(cc=>{
+    const s=toScreen(cc);
+    const d=Math.hypot(s.x-mx,s.y-my);
+    if(d<threshold&&d<bestDist){bestDist=d;best=cc.clone();}
+  });
+  return best;
+}
+
 // ── Measurement state management ───────────────────────────────────────────
 function cancelMeasure(){
-  // Clear linear state
   if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
   if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
   linearPt1=null;
-  // Clear radial state
   radialMarkers.forEach(m=>scene.remove(m));radialMarkers=[];
   if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
   radialPts=[];
-  // Clear snap
+  angleMarkers.forEach(m=>scene.remove(m));angleMarkers=[];
+  anglePts=[];
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   snapIndicator.style.display='none';
 }
@@ -484,13 +557,14 @@ function clearAllMeasurements(){
   measureObjects=measureObjects.filter(o=>o.type!=='measurement');
   document.getElementById('measure-list').innerHTML='';
   document.getElementById('measure-panel').style.display='none';
+  circleCenters=[];
 }
 
 function addMeasureRow(id,type,text,objs){
   document.getElementById('measure-panel').style.display='block';
   measureObjects.push({type:'measurement',id,obj:objs});
   const row=document.createElement('div');row.className='mrow';row.id='mrow-'+id;
-  row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+(type==='linear'?'linear':'radial')+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';
+  const badgeLabel=type==='linear'?'linear':type==='radial'?'radial':'angle';row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+badgeLabel+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';
   const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete measurement '+id);del.style.cssText='padding:2px 7px;font-size:11px;';
   del.innerHTML='<i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i>';
   del.addEventListener('click',()=>deleteMeasure(id));
@@ -515,6 +589,8 @@ function setMeasureMode(mode){
     document.getElementById('btn-linear').classList.remove('active');
     document.getElementById('btn-radial').setAttribute('aria-pressed','false');
     document.getElementById('btn-radial').classList.remove('active');
+    document.getElementById('btn-angle').setAttribute('aria-pressed','false');
+    document.getElementById('btn-angle').classList.remove('active');
     announce('Measure mode off.');return;
   }
   measureMode=mode;controls.enabled=false;
@@ -526,6 +602,8 @@ function setMeasureMode(mode){
     document.getElementById('btn-linear').classList.add('active');
     document.getElementById('btn-radial').setAttribute('aria-pressed','false');
     document.getElementById('btn-radial').classList.remove('active');
+    document.getElementById('btn-angle').setAttribute('aria-pressed','false');
+    document.getElementById('btn-angle').classList.remove('active');
     announce('Linear measure: click 2 points.');
   } else {
     measureHint.style.background='rgba(196,114,26,0.92)';
@@ -534,7 +612,15 @@ function setMeasureMode(mode){
     document.getElementById('btn-radial').classList.add('active');
     document.getElementById('btn-linear').setAttribute('aria-pressed','false');
     document.getElementById('btn-linear').classList.remove('active');
+    document.getElementById('btn-angle').setAttribute('aria-pressed','false');
+    document.getElementById('btn-angle').classList.remove('active');
     announce('Radial measure: click 3 points on any curve to calculate radius.');
+  } else if(mode==='angle'){
+    measureHint.style.background='rgba(94,53,177,0.92)';
+    measureHint.textContent='Click the vertex (corner point) of the angle';
+    document.getElementById('btn-angle').setAttribute('aria-pressed','true');
+    document.getElementById('btn-angle').classList.add('active');
+    announce('Angle measure: click vertex point, then two arm points.');
   }
 }
 
@@ -542,14 +628,17 @@ function setMeasureMode(mode){
 canvas.addEventListener('mousemove',e=>{
   if(!measureMode||!currentModel)return;
   const{x,y}=getMouseXY(e);
-  const snap=findSnapVertex(x,y);
+  // Circle center snap takes priority over vertex snap
+  const ccSnap=findSnapCircleCenter(x,y);
+  const snap=ccSnap||findSnapVertex(x,y);
+  const isCC=!!ccSnap;
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   if(snap){
-    snapSphere=makeSphere(snap,0xC4721A,modelSize*0.018);
+    snapSphere=makeSphere(snap,isCC?0x00BCD4:0xC4721A,modelSize*0.018);
     scene.add(snapSphere);
     snapIndicator.style.display='block';
-    snapIndicator.textContent='Snapped to vertex';
-    snapIndicator.style.background='#C4721A';
+    snapIndicator.textContent=isCC?'Snapped to circle center':'Snapped to vertex';
+    snapIndicator.style.background=isCC?'#00838F':'#C4721A';
   } else {
     snapIndicator.style.display='none';
   }
@@ -578,6 +667,20 @@ canvas.addEventListener('mousemove',e=>{
           new THREE.LineBasicMaterial({color:0xC4721A})
         );
         scene.add(radialPreview);
+      }
+    }
+  }
+  // Angle: preview arc when vertex + arm1 set
+  if(measureMode==='angle'&&anglePts.length>=2){
+    const hitPt=snap||getRayHit(e);
+    if(hitPt){
+      angleMarkers.filter(m=>m.userData.isPreview).forEach(m=>scene.remove(m));
+      angleMarkers=angleMarkers.filter(m=>!m.userData.isPreview);
+      const arcGeo=makeAngleArc(anglePts[0],anglePts[1],hitPt,modelSize*0.18);
+      if(arcGeo){
+        const arcLine=new THREE.Line(arcGeo,new THREE.LineBasicMaterial({color:0x5E35B1}));
+        arcLine.userData.isPreview=true;
+        scene.add(arcLine);angleMarkers.push(arcLine);
       }
     }
   }
@@ -662,10 +765,63 @@ canvas.addEventListener('click',e=>{
       measureCount++;
       const id=measureCount;
       const text='r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4)+' units';
-      addMeasureRow(id,'radial',text,objs);
+      addMeasureRow(id,'radial',text,objs);circleCenters.push(center.clone());
       announce('Radial #'+id+': r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4));
       radialPts=[];
       measureHint.textContent='Click point 1 of 3 on the curve';
+    }
+  }
+
+  // ── Angle: vertex → arm1 → arm2 ──────────────────────────────────────────
+  if(measureMode==='angle'){
+    anglePts.push(hitPt.clone());
+    const dot=makeSphere(hitPt,0x5E35B1,modelSize*0.016);
+    scene.add(dot);angleMarkers.push(dot);
+    if(anglePts.length===1){
+      measureHint.textContent='Click first arm point';
+      announce('Vertex set. Click first arm point.');
+    } else if(anglePts.length===2){
+      const arm1Line=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[1]]),
+        new THREE.LineBasicMaterial({color:0x5E35B1})
+      );
+      scene.add(arm1Line);angleMarkers.push(arm1Line);
+      measureHint.textContent='Click second arm point';
+      announce('Arm 1 set. Click second arm point.');
+    } else if(anglePts.length===3){
+      // Clear previews
+      angleMarkers.filter(m=>m.userData.isPreview).forEach(m=>scene.remove(m));
+      angleMarkers=angleMarkers.filter(m=>!m.userData.isPreview);
+      const angleDeg=computeAngle(anglePts[0],anglePts[1],anglePts[2]);
+      const suppDeg=180-angleDeg;
+      const arcRadius=Math.min(
+        anglePts[0].distanceTo(anglePts[1]),
+        anglePts[0].distanceTo(anglePts[2])
+      )*0.4;
+      // Draw second arm line
+      const arm2Line=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[2]]),
+        new THREE.LineBasicMaterial({color:0x5E35B1})
+      );
+      scene.add(arm2Line);angleMarkers.push(arm2Line);
+      // Draw arc
+      const arcGeo=makeAngleArc(anglePts[0],anglePts[1],anglePts[2],arcRadius);
+      if(arcGeo){
+        const arcLine=new THREE.Line(arcGeo,new THREE.LineBasicMaterial({color:0x5E35B1}));
+        scene.add(arcLine);angleMarkers.push(arcLine);
+      }
+      // Draw label sprite
+      const label=makeAngleLabel(anglePts[0],anglePts[1],anglePts[2],angleDeg,arcRadius);
+      scene.add(label);angleMarkers.push(label);
+      measureCount++;
+      const id=measureCount;
+      const objs=[...angleMarkers];
+      angleMarkers=[];
+      const aText=angleDeg.toFixed(2)+'°  (supp: '+suppDeg.toFixed(2)+'°)';
+      addMeasureRow(id,'angle',aText,objs);
+      announce('Angle #'+id+': '+angleDeg.toFixed(2)+'° — supplementary: '+suppDeg.toFixed(2)+'°');
+      anglePts=[];
+      measureHint.textContent='Click the vertex (corner point) of the angle';
     }
   }
 });
@@ -728,6 +884,7 @@ document.getElementById('btn-iso-br').addEventListener('click',()=>setIsoView('b
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-linear').addEventListener('click',()=>setMeasureMode('linear'));
+document.getElementById('btn-angle').addEventListener('click',()=>setMeasureMode('angle'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMeasureMode('radial'));
 document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAllMeasurements();announce('All measurements cleared.');});
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
@@ -760,7 +917,7 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='6'||e.code==='Digit6'||e.code==='Numpad6')setView('bottom');
     else if(e.key==='o'||e.key==='O')toggleOrtho();else if(e.key==='w'||e.key==='W')toggleWireframe();
     else if(e.key==='l'||e.key==='L')setMeasureMode('linear');
-    else if(e.key==='c'||e.key==='C')setMeasureMode('radial');
+    else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='a'||e.key==='A')setMeasureMode('angle');
     else if(e.key==='Escape'){cancelMeasure();if(measureMode)announce('Cancelled.');}
     else return;
   }
