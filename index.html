@@ -513,7 +513,13 @@ function makeAngleLabel(vertex,arm1,arm2,angleDeg,radius,id){
   canvas2.width=256;canvas2.height=64;
   const ctx2=canvas2.getContext('2d');
   ctx2.fillStyle='rgba(94,53,177,0.9)';
-  ctx2.beginPath();ctx2.roundRect(4,4,248,56,10);ctx2.fill();
+  ctx2.beginPath();
+  const rx=4,ry=4,rw=248,rh=56,rr=10;
+  ctx2.moveTo(rx+rr,ry);ctx2.lineTo(rx+rw-rr,ry);ctx2.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);
+  ctx2.lineTo(rx+rw,ry+rh-rr);ctx2.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);
+  ctx2.lineTo(rx+rr,ry+rh);ctx2.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);
+  ctx2.lineTo(rx,ry+rr);ctx2.arcTo(rx,ry,rx+rr,ry,rr);ctx2.closePath();
+  ctx2.fill();
   ctx2.fillStyle='white';ctx2.font='bold 28px system-ui';
   ctx2.textAlign='center';ctx2.textBaseline='middle';
   ctx2.fillText(angleDeg.toFixed(2)+'°',128,34);
