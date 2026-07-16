@@ -611,7 +611,7 @@ function setMeasureMode(mode){
     document.getElementById('btn-angle').setAttribute('aria-pressed','false');
     document.getElementById('btn-angle').classList.remove('active');
     announce('Linear measure: click 2 points.');
-  } else {
+  } else if(mode==='radial'){
     measureHint.style.background='rgba(196,114,26,0.92)';
     measureHint.textContent='Click point 1 of 3 on the curve';
     document.getElementById('btn-radial').setAttribute('aria-pressed','true');
@@ -626,6 +626,10 @@ function setMeasureMode(mode){
     measureHint.textContent='Click the vertex (corner point) of the angle';
     document.getElementById('btn-angle').setAttribute('aria-pressed','true');
     document.getElementById('btn-angle').classList.add('active');
+    document.getElementById('btn-linear').setAttribute('aria-pressed','false');
+    document.getElementById('btn-linear').classList.remove('active');
+    document.getElementById('btn-radial').setAttribute('aria-pressed','false');
+    document.getElementById('btn-radial').classList.remove('active');
     announce('Angle measure: click vertex point, then two arm points.');
   }
 }
