@@ -113,8 +113,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
     <button class="tb-btn" id="btn-hdim" aria-pressed="false" aria-label="Horizontal dimension — 2 points, measures X distance"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H-Dim</button>
     <button class="tb-btn" id="btn-vdim" aria-pressed="false" aria-label="Vertical dimension — 2 points, measures Y distance"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V-Dim</button>
-    <button class="tb-btn" id="btn-hdim" aria-pressed="false" aria-label="Horizontal dimension — 2 points, measures X distance"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H-Dim</button>
-    <button class="tb-btn" id="btn-vdim" aria-pressed="false" aria-label="Vertical dimension — 2 points, measures Y distance"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V-Dim</button>
+    
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i>Wireframe</button>
     <button class="tb-btn" id="btn-reset" aria-label="Reset camera"><i class="ti ti-refresh" style="font-size:14px;" aria-hidden="true"></i>Reset</button>
@@ -256,7 +255,7 @@ const MODELS=[
   {label:'Bracket 1',                url:'models/obj%202.stl',        code:'ALPHA-101'},
   {label:'Bracket 2',                url:'models/Bracket%202.STL',    code:'BETA-202'},
   {label:'Bracket 3',                url:'models/Bracket%203.STL',    code:'BRKT-303'},
-  {label:'Bracket 4', url:'models/Bracket%204.STL',       code:'DELTA-404'},
+  {label:'Bracket 4',                url:'models/Bracket%204.STL',    code:'DELTA-404'},
   {label:'Model 05 — Placeholder E', url:'models/model-05.glb',       code:'ENG-505'},
   {label:'Model 06 — Placeholder F', url:'models/model-06.glb',       code:'FOXT-606'},
   {label:'Model 07 — Placeholder G', url:'models/model-07.obj',       code:'GOLF-707'},
@@ -981,62 +980,65 @@ canvas.addEventListener('click',e=>{
     }
   }
 
-  // H-DIM / V-DIM
+  // H-DIM / V-DIM — camera-relative horizontal and vertical
   if(measureMode==='hdim'||measureMode==='vdim'){
     const isH=measureMode==='hdim';
     if(!dimPt1){
       dimPt1=hitPt.clone();
       if(dimMarker1){scene.remove(dimMarker1);}
       dimMarker1=makeSphere(dimPt1,0x2E7D32);scene.add(dimMarker1);
-      measureHint.textContent='Click point 2'+(snap&&snap.type!=='vert'?' ('+snap.type+')':'');
+      measureHint.textContent='Click point 2'+(snap?(' ('+snap.type+')'):'');
       announce('Point 1 set. Click point 2.');
     }else{
       const p1=dimPt1.clone();
       const p2=hitPt.clone();
-      const dimVal=Math.abs(isH?p2.x-p1.x:p2.y-p1.y);
       if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
       if(dimMarker1){scene.remove(dimMarker1);dimMarker1=null;}
 
-      // Extension line offset direction
-      const offset=modelSize*0.06;
-      const perpDir=isH?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+      // Get camera's right (horizontal) and up (vertical) vectors in world space
+      const camRight=new THREE.Vector3();
+      const camUp=new THREE.Vector3();
+      const camFwd=new THREE.Vector3();
+      camera.matrix.extractBasis(camRight,camUp,camFwd);
+      camRight.normalize();camUp.normalize();
 
-      // Project measurement line endpoints
-      const measStart=isH?new THREE.Vector3(p1.x,p1.y,p1.z):new THREE.Vector3(p1.x,p1.y,p1.z);
-      const measEnd=isH?new THREE.Vector3(p2.x,p1.y,p1.z):new THREE.Vector3(p1.x,p2.y,p1.z);
+      // Project the vector p1->p2 onto the camera right or up axis
+      const diff=new THREE.Vector3().subVectors(p2,p1);
+      const projLen=isH?diff.dot(camRight):diff.dot(camUp);
+      const dimVal=Math.abs(projLen);
 
-      // Extension lines from each point to the measurement line
-      const ext1start=p1.clone();
-      const ext1end=measStart.clone().addScaledVector(perpDir,offset);
-      const ext2start=p2.clone();
-      const ext2end=measEnd.clone().addScaledVector(perpDir,offset);
+      // The measurement endpoint: p1 + projection along axis
+      const measAxis=isH?camRight:camUp;
+      const measEnd=p1.clone().addScaledVector(measAxis,projLen);
 
-      // Main dimension line (with arrows via endpoint dots)
-      const dimLineStart=measStart.clone().addScaledVector(perpDir,offset);
-      const dimLineEnd=measEnd.clone().addScaledVector(perpDir,offset);
+      // Offset direction: perpendicular to measurement axis, away from model
+      // Use the other camera axis (up for H-dim, right for V-dim)
+      const offsetDir=isH?camUp.clone():camRight.clone();
+      const offset=modelSize*0.08;
 
-      // Arrow markers at each end of dim line
-      const arrow1=makeSphere(dimLineStart,0x2E7D32,modelSize*0.012);
-      const arrow2=makeSphere(dimLineEnd,0x2E7D32,modelSize*0.012);
+      // Extension lines from p1 and measEnd up to the dim line
+      const dimLineStart=p1.clone().addScaledVector(offsetDir,offset);
+      const dimLineEnd=measEnd.clone().addScaledVector(offsetDir,offset);
 
+      // Also draw extension line from p2 to measEnd (to show the right-angle projection)
       const mat=new THREE.LineBasicMaterial({color:0x2E7D32});
-      const ext1Line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([ext1start,ext1end]),mat);
-      const ext2Line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([ext2start,ext2end]),mat);
+      const ext1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1,dimLineStart]),mat);
+      const ext2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([measEnd,dimLineEnd]),mat);
+      const ext3=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p2,measEnd]),new THREE.LineDashedMaterial({color:0x2E7D32,dashSize:modelSize*0.04,gapSize:modelSize*0.02}));
+      ext3.computeLineDistances();
       const dimLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([dimLineStart,dimLineEnd]),mat);
-
-      // Point markers
       const sA=makeSphere(p1,0x2E7D32,modelSize*0.014);
       const sB=makeSphere(p2,0x2E7D32,modelSize*0.014);
-
-      scene.add(ext1Line);scene.add(ext2Line);scene.add(dimLine);
-      scene.add(arrow1);scene.add(arrow2);scene.add(sA);scene.add(sB);
+      const sC=makeSphere(measEnd,0x2E7D32,modelSize*0.010);
+      scene.add(ext1);scene.add(ext2);scene.add(ext3);scene.add(dimLine);
+      scene.add(sA);scene.add(sB);scene.add(sC);
 
       measureCount++;
       const label=(isH?'H':'V')+'-Dim: '+dimVal.toFixed(4)+' units';
-      addRow(measureCount,isH?'hdim':'vdim',label,[ext1Line,ext2Line,dimLine,arrow1,arrow2,sA,sB]);
-      announce(label+' ('+( isH?'horizontal X':'vertical Y')+' distance)');
+      addRow(measureCount,isH?'hdim':'vdim',label,[ext1,ext2,ext3,dimLine,sA,sB,sC]);
+      announce(label+' (camera-relative '+(isH?'horizontal':'vertical')+')');
       dimPt1=null;
-      measureHint.textContent='Click point 1';
+      measureHint.textContent='Click point 1 — circle center or corner';
     }
   }
 
