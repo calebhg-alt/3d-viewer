@@ -36,7 +36,7 @@ body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-item
 .dpad{display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px);gap:2px;}
 .dpad-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #CBD5DC;border-radius:5px;background:white;color:#444;cursor:pointer;font-size:15px;user-select:none;}
 .dpad-btn:hover{background:var(--avc-steel-bg);border-color:#8AAEBB;color:var(--avc-steel);}
-.dpad-btn:active{background:var(--avc-burgundy-bg);border-color:var(--avc-burgundy);}
+.dpad-btn:active{background:var(--avc-burgundy-bg);}
 .dpad-center{background:#f0f0f0;border-color:#ccc;font-size:10px;color:#888;cursor:default;}
 .zoom-col{display:flex;flex-direction:column;gap:3px;}
 .zoom-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #CBD5DC;border-radius:5px;background:white;color:#444;cursor:pointer;font-size:16px;user-select:none;}
@@ -45,7 +45,6 @@ body{font-family:system-ui,sans-serif;background:#f0f2f4;display:flex;align-item
 .view-grid{display:grid;grid-template-columns:repeat(3,36px);gap:3px;}
 .vg-btn{display:flex;align-items:center;justify-content:center;height:30px;border:1px solid #CBD5DC;border-radius:5px;background:white;color:#444;cursor:pointer;font-size:11px;font-weight:500;user-select:none;}
 .vg-btn:hover{background:var(--avc-steel-bg);border-color:#8AAEBB;color:var(--avc-steel);}
-.vg-btn:active{background:var(--avc-burgundy-bg);}
 .kbd-panel{display:none;background:#F7F9FB;border-top:1px solid #CBD5DC;padding:10px 14px;font-size:12px;color:#444;}
 .kbd-panel.open{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;}
 .kbd-row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;}
@@ -66,9 +65,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 #code-error{font-size:12px;color:#A32D2D;display:none;text-align:center;font-weight:500;}
 #code-submit{background:var(--avc-burgundy);color:white;border:none;border-radius:6px;padding:9px 0;font-size:13px;font-weight:500;cursor:pointer;width:100%;}
 #code-submit:hover{background:#4A1A26;}
-#code-submit:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
 #code-cancel{background:none;border:none;font-size:12px;color:#5F5E5A;cursor:pointer;text-align:center;padding:2px;text-decoration:underline;}
-#code-cancel:hover{color:#1A1A1A;}
 .codes-panel{padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;}
 .codes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .codes-title{font-size:12px;font-weight:500;color:var(--avc-burgundy);display:flex;align-items:center;gap:6px;}
@@ -80,24 +77,17 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 #instructor-error{font-size:12px;color:#A32D2D;display:none;margin-top:6px;font-weight:500;}
 #instructor-submit{background:var(--avc-burgundy);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;}
 #instructor-submit:hover{background:#4A1A26;}
-#instructor-submit:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
 .watermark{padding:4px 14px;font-size:11px;color:#aaa;background:white;font-style:italic;border-top:1px solid #f0f0f0;}
 </style>
 </head>
 <body>
 <h1 class="sr-only">Antelope Valley College 3D Model Viewer</h1>
 <div class="app-shell">
-
   <div class="app-header" role="banner">
     <div class="header-mark" aria-hidden="true">
-      <div class="mark-bar mark-bar-1"></div>
-      <div class="mark-bar mark-bar-2"></div>
-      <div class="mark-bar mark-bar-3"></div>
+      <div class="mark-bar mark-bar-1"></div><div class="mark-bar mark-bar-2"></div><div class="mark-bar mark-bar-3"></div>
     </div>
-    <div class="header-wordmark">
-      <span>ANTELOPE VALLEY</span>
-      <span>COLLEGE</span>
-    </div>
+    <div class="header-wordmark"><span>ANTELOPE VALLEY</span><span>COLLEGE</span></div>
     <span class="header-title">3D Model Viewer</span>
   </div>
 
@@ -112,45 +102,40 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn active" id="btn-rotate" aria-pressed="true" aria-label="Rotate mode"><i class="ti ti-rotate-360" style="font-size:14px;" aria-hidden="true"></i>Rotate</button>
     <button class="tb-btn" id="btn-pan" aria-pressed="false" aria-label="Pan mode"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Pan</button>
     <div class="tb-sep" role="separator"></div>
-    <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — click 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
-    <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — click 3 points on any curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
-    <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — click 3 points: vertex then two arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
+    <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
+    <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — 3 points on curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
+    <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i>Wireframe</button>
     <button class="tb-btn" id="btn-reset" aria-label="Reset camera"><i class="ti ti-refresh" style="font-size:14px;" aria-hidden="true"></i>Reset</button>
+    <button class="tb-btn" id="btn-ortho" aria-pressed="false" aria-label="Toggle orthographic projection"><i class="ti ti-box" style="font-size:14px;" aria-hidden="true"></i>Ortho</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-clear-all" aria-label="Clear all measurements"><i class="ti ti-trash" style="font-size:14px;" aria-hidden="true"></i>Clear</button>
     <button class="tb-btn" id="btn-kbd" aria-expanded="false" aria-controls="kbd-panel" aria-label="Keyboard shortcuts"><i class="ti ti-keyboard" style="font-size:14px;" aria-hidden="true"></i></button>
-    <div class="tb-sep" role="separator"></div>
-    <button class="tb-btn" id="btn-ortho" aria-pressed="false" aria-label="Toggle orthographic projection"><i class="ti ti-box" style="font-size:14px;" aria-hidden="true"></i>Ortho</button>
   </div>
 
   <div id="kbd-panel" class="kbd-panel" role="region" aria-label="Keyboard shortcuts">
     <div class="kbd-row"><span>Rotate</span><span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span></div>
     <div class="kbd-row"><span>Pan</span><span><kbd>Shift</kbd>+arrows</span></div>
-    <div class="kbd-row"><span>Zoom</span><span><kbd>+</kbd>/<kbd>-</kbd> or scroll</span></div>
+    <div class="kbd-row"><span>Zoom</span><span><kbd>+</kbd>/<kbd>-</kbd></span></div>
     <div class="kbd-row"><span>Views</span><span><kbd>1</kbd>–<kbd>6</kbd></span></div>
-    <div class="kbd-row"><span>Reset</span><span><kbd>R</kbd></span></div>
-    <div class="kbd-row"><span>Linear</span><span><kbd>L</kbd> then 2 clicks</span></div>
-    <div class="kbd-row"><span>Radial</span><span><kbd>C</kbd> then 3 clicks</span></div>
-    <div class="kbd-row"><span>Angle</span><span><kbd>A</kbd> then 3 clicks</span></div>
-    <div class="kbd-row"><span>Ortho toggle</span><span><kbd>O</kbd></span></div>
-    <div class="kbd-row"><span>Wireframe</span><span><kbd>W</kbd></span></div>
-    <div class="kbd-row"><span>Cancel</span><span><kbd>Esc</kbd></span></div>
+    <div class="kbd-row"><span>Reset / Ortho</span><span><kbd>R</kbd> / <kbd>O</kbd></span></div>
+    <div class="kbd-row"><span>Linear / Radial / Angle</span><span><kbd>L</kbd> / <kbd>C</kbd> / <kbd>A</kbd></span></div>
+    <div class="kbd-row"><span>Wireframe / Cancel</span><span><kbd>W</kbd> / <kbd>Esc</kbd></span></div>
   </div>
 
   <div class="ctrl-panel" role="group" aria-label="On-screen navigation controls">
     <div class="ctrl-section">
       <div class="ctrl-label">Rotate / Pan</div>
-      <div class="dpad" role="group" aria-label="Directional controls">
+      <div class="dpad">
         <div></div>
-        <button class="dpad-btn" id="dp-up" aria-label="Move up"><i class="ti ti-chevron-up" aria-hidden="true"></i></button>
+        <button class="dpad-btn" id="dp-up" aria-label="Up"><i class="ti ti-chevron-up" aria-hidden="true"></i></button>
         <div></div>
-        <button class="dpad-btn" id="dp-left" aria-label="Move left"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+        <button class="dpad-btn" id="dp-left" aria-label="Left"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
         <div class="dpad-btn dpad-center" aria-hidden="true">●</div>
-        <button class="dpad-btn" id="dp-right" aria-label="Move right"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+        <button class="dpad-btn" id="dp-right" aria-label="Right"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
         <div></div>
-        <button class="dpad-btn" id="dp-down" aria-label="Move down"><i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+        <button class="dpad-btn" id="dp-down" aria-label="Down"><i class="ti ti-chevron-down" aria-hidden="true"></i></button>
         <div></div>
       </div>
     </div>
@@ -159,32 +144,30 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
       <div class="zoom-col">
         <button class="zoom-btn" id="btn-zoom-in" aria-label="Zoom in"><i class="ti ti-zoom-in" aria-hidden="true"></i></button>
         <button class="zoom-btn" id="btn-zoom-out" aria-label="Zoom out"><i class="ti ti-zoom-out" aria-hidden="true"></i></button>
-        <button class="zoom-btn" id="btn-fit" aria-label="Fit to screen" style="font-size:11px;font-weight:500;">Fit</button>
+        <button class="zoom-btn" id="btn-fit" aria-label="Fit" style="font-size:11px;font-weight:500;">Fit</button>
       </div>
     </div>
     <div class="ctrl-section">
       <div class="ctrl-label">Views</div>
-      <div class="view-grid" role="group" aria-label="Camera view presets">
-        <button class="vg-btn" id="btn-front" aria-label="Front view">F</button>
-        <button class="vg-btn" id="btn-top" aria-label="Top view">T</button>
-        <button class="vg-btn" id="btn-right" aria-label="Right view">R</button>
-        <button class="vg-btn" id="btn-back" aria-label="Back view">Bk</button>
-        <button class="vg-btn" id="btn-bottom" aria-label="Bottom view">Bt</button>
-        <button class="vg-btn" id="btn-left" aria-label="Left view">L</button>
-        <button class="vg-btn" id="btn-iso-fl" aria-label="Isometric front-left view" style="font-size:10px;">ISO</button>
-        <button class="vg-btn" id="btn-iso-fr" aria-label="Isometric front-right view" style="font-size:10px;">ISO2</button>
-        <button class="vg-btn" id="btn-iso-br" aria-label="Isometric back-right view" style="font-size:10px;">ISO3</button>
+      <div class="view-grid">
+        <button class="vg-btn" id="btn-front" aria-label="Front">F</button>
+        <button class="vg-btn" id="btn-top" aria-label="Top">T</button>
+        <button class="vg-btn" id="btn-right" aria-label="Right">R</button>
+        <button class="vg-btn" id="btn-back" aria-label="Back">Bk</button>
+        <button class="vg-btn" id="btn-bottom" aria-label="Bottom">Bt</button>
+        <button class="vg-btn" id="btn-left" aria-label="Left">L</button>
+        <button class="vg-btn" id="btn-iso1" aria-label="ISO front-left" style="font-size:10px;">ISO</button>
+        <button class="vg-btn" id="btn-iso2" aria-label="ISO front-right" style="font-size:10px;">ISO2</button>
+        <button class="vg-btn" id="btn-iso3" aria-label="ISO back-right" style="font-size:10px;">ISO3</button>
       </div>
     </div>
     <div class="ctrl-section" style="align-items:flex-start;">
       <div class="ctrl-label">Mode</div>
-      <div style="font-size:11px;color:#5F5E5A;line-height:1.6;padding-top:2px;">
-        D-pad rotates<br>in Rotate mode,<br>pans in Pan mode.
-      </div>
+      <div style="font-size:11px;color:#5F5E5A;line-height:1.6;padding-top:2px;">D-pad rotates<br>in Rotate mode,<br>pans in Pan mode.</div>
     </div>
   </div>
 
-  <div style="position:relative;height:520px;background:#0F1923;" role="application" aria-label="3D viewport. Select a model from the dropdown to begin." id="viewport">
+  <div style="position:relative;height:520px;background:#111C28;" role="application" aria-label="3D viewport" id="viewport">
     <canvas id="three-canvas" style="width:100%;height:100%;display:block;" aria-hidden="true"></canvas>
     <div id="code-modal" role="dialog" aria-modal="true" aria-labelledby="code-title">
       <div id="code-box">
@@ -202,17 +185,17 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
       <p style="color:rgba(255,255,255,0.3);font-size:14px;margin:0;">Select a model from the dropdown above</p>
     </div>
     <div id="measure-hint" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:6px;font-size:12px;pointer-events:none;white-space:nowrap;color:white;" aria-hidden="true"></div>
-    <div id="snap-indicator" style="display:none;position:absolute;top:10px;right:12px;background:#C4721A;color:white;padding:3px 10px;border-radius:6px;font-size:11px;pointer-events:none;" aria-hidden="true">Snapped to vertex</div>
+    <div id="snap-indicator" style="display:none;position:absolute;top:10px;right:12px;background:#C4721A;color:white;padding:3px 10px;border-radius:6px;font-size:11px;pointer-events:none;" aria-hidden="true">Snapped</div>
     <div id="loading-indicator" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);" aria-hidden="true">
       <p style="color:white;font-size:14px;margin:0;">Loading model…</p>
     </div>
-    <div style="position:absolute;bottom:8px;right:10px;font-size:11px;color:rgba(255,255,255,0.22);pointer-events:none;" aria-hidden="true">scroll=zoom · right-drag=rotate · always active</div>
+    <div style="position:absolute;bottom:8px;right:10px;font-size:11px;color:rgba(255,255,255,0.22);pointer-events:none;" aria-hidden="true">scroll=zoom · right-drag=rotate</div>
     <div style="position:absolute;bottom:8px;left:10px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
   </div>
 
   <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin.</div>
 
-  <div id="measure-panel" style="display:none;padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;" role="region" aria-label="Measurement results" aria-live="polite">
+  <div id="measure-panel" style="display:none;padding:8px 14px;background:#F7F9FB;border-top:1px solid #CBD5DC;" role="region" aria-label="Measurements" aria-live="polite">
     <div style="font-size:12px;font-weight:500;color:var(--avc-burgundy);margin-bottom:6px;">Measurements</div>
     <div id="measure-list"></div>
   </div>
@@ -220,30 +203,26 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
   <div class="codes-panel">
     <div class="codes-header">
       <span class="codes-title"><i class="ti ti-shield-lock" style="font-size:14px;" aria-hidden="true"></i> Instructor Panel</span>
-      <button class="tb-btn" id="btn-show-instructor" style="padding:3px 8px;font-size:11px;" aria-expanded="false" aria-controls="instructor-prompt">
-        <i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock
-      </button>
+      <button class="tb-btn" id="btn-show-instructor" style="padding:3px 8px;font-size:11px;" aria-expanded="false"><i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock</button>
     </div>
     <div id="instructor-prompt" role="region" aria-label="Instructor PIN entry">
       <label for="instructor-input">Enter instructor PIN to view access codes:</label>
       <div class="instructor-row">
         <input type="password" id="instructor-input" placeholder="PIN" aria-label="Instructor PIN" autocomplete="off" maxlength="10" inputmode="numeric">
-        <button id="instructor-submit" aria-label="Submit instructor PIN">Unlock</button>
-        <button class="tb-btn" id="instructor-cancel" aria-label="Cancel">Cancel</button>
+        <button id="instructor-submit">Unlock</button>
+        <button class="tb-btn" id="instructor-cancel">Cancel</button>
       </div>
       <div id="instructor-error" role="alert">Incorrect PIN — please try again.</div>
     </div>
-    <div id="code-table" style="display:none;" aria-label="Model access codes" role="region">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:4px;">
+    <div id="code-table" style="display:none;" role="region" aria-label="Model access codes">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px;">
         <span style="font-size:12px;color:#5F5E5A;">Access codes for all models</span>
-        <button class="tb-btn" id="btn-lock-instructor" style="padding:3px 8px;font-size:11px;" aria-label="Lock instructor panel">
-          <i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Lock
-        </button>
+        <button class="tb-btn" id="btn-lock-instructor" style="padding:3px 8px;font-size:11px;"><i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Lock</button>
       </div>
       <table style="width:100%;font-size:12px;border-collapse:collapse;" role="table">
         <thead><tr style="border-bottom:1px solid #CBD5DC;">
           <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Model</th>
-          <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Access Code</th>
+          <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Code</th>
           <th style="text-align:left;padding:4px 8px;color:#5F5E5A;font-weight:500;">Status</th>
         </tr></thead>
         <tbody id="code-table-body"></tbody>
@@ -259,67 +238,74 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 (function(){
-
 const INSTRUCTOR_PIN='7018';
-
 const MODELS=[
-  {label:'Bracket 1',                 url:'models/obj%202.stl',           code:'ALPHA-101'},
-  {label:'Bracket 2',                 url:'models/Bracket%202.STL',       code:'BETA-202'},
-  {label:'Bracket 3',                 url:'models/Bracket%203.STL',       code:'BRKT-303'},
-  {label:'Bracket 4',  url:'models/Bracket%204.STL',          code:'DELTA-404'},
-  {label:'Model 05 — Placeholder E',  url:'models/model-05.glb',          code:'ENG-505'},
-  {label:'Model 06 — Placeholder F',  url:'models/model-06.glb',          code:'FOXT-606'},
-  {label:'Model 07 — Placeholder G',  url:'models/model-07.obj',          code:'GOLF-707'},
-  {label:'Model 08 — Placeholder H',  url:'models/model-08.obj',          code:'HOTEL-808'},
+  {label:'Bracket 1',                url:'models/obj%202.stl',        code:'ALPHA-101'},
+  {label:'Bracket 2',                url:'models/Bracket%202.STL',    code:'BETA-202'},
+  {label:'Bracket 3',                url:'models/Bracket%203.STL',    code:'BRKT-303'},
+  {label:'Model 04 — Placeholder D', url:'models/model-04.stl',       code:'DELTA-404'},
+  {label:'Model 05 — Placeholder E', url:'models/model-05.glb',       code:'ENG-505'},
+  {label:'Model 06 — Placeholder F', url:'models/model-06.glb',       code:'FOXT-606'},
+  {label:'Model 07 — Placeholder G', url:'models/model-07.obj',       code:'GOLF-707'},
+  {label:'Model 08 — Placeholder H', url:'models/model-08.obj',       code:'HOTEL-808'},
 ];
 
-const unlockedModels=new Set();
-let pendingModelIndex=null;
-let instructorUnlocked=false;
-
+// ── Populate UI ─────────────────────────────────────────────────────────────
 const sel=document.getElementById('model-select');
 sel.innerHTML='<option value="">— Choose a model —</option>';
-MODELS.forEach((m,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent='🔒 '+m.label;sel.appendChild(opt);});
-
+MODELS.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent='🔒 '+m.label;sel.appendChild(o);});
 const tbody=document.getElementById('code-table-body');
-MODELS.forEach((m,i)=>{const tr=document.createElement('tr');tr.id='code-row-'+i;tr.style.borderBottom='1px solid #E8EDF0';tr.innerHTML='<td style="padding:4px 8px;color:#2C2C2A;">'+m.label+'</td><td style="padding:4px 8px;"><code style="background:white;padding:2px 6px;border-radius:4px;border:1px solid #CBD5DC;font-size:12px;letter-spacing:0.08em;">'+m.code+'</code></td><td style="padding:4px 8px;" id="code-status-'+i+'"><span style="color:#888;">Locked</span></td>';tbody.appendChild(tr);});
+MODELS.forEach((m,i)=>{const tr=document.createElement('tr');tr.style.borderBottom='1px solid #E8EDF0';tr.innerHTML='<td style="padding:4px 8px;">'+m.label+'</td><td style="padding:4px 8px;"><code style="background:white;padding:2px 6px;border-radius:4px;border:1px solid #CBD5DC;">'+m.code+'</code></td><td style="padding:4px 8px;" id="cs-'+i+'"><span style="color:#888;">Locked</span></td>';tbody.appendChild(tr);});
 
-const instructorPrompt=document.getElementById('instructor-prompt');
-const instructorInput=document.getElementById('instructor-input');
-const instructorError=document.getElementById('instructor-error');
+// ── Instructor panel ────────────────────────────────────────────────────────
+let instructorUnlocked=false;
+const btnInst=document.getElementById('btn-show-instructor');
+const instPrompt=document.getElementById('instructor-prompt');
+const instInput=document.getElementById('instructor-input');
+const instError=document.getElementById('instructor-error');
 const codeTable=document.getElementById('code-table');
-const btnShowInstructor=document.getElementById('btn-show-instructor');
+btnInst.addEventListener('click',()=>{
+  if(instructorUnlocked){const v=codeTable.style.display!=='none';codeTable.style.display=v?'none':'block';btnInst.innerHTML=v?'<i class="ti ti-lock" style="font-size:12px;"></i> Unlock':'<i class="ti ti-lock-open" style="font-size:12px;"></i> Hide';btnInst.setAttribute('aria-expanded',String(!v));}
+  else{const v=instPrompt.style.display!=='none';instPrompt.style.display=v?'none':'block';btnInst.setAttribute('aria-expanded',String(!v));if(!v){instInput.value='';instError.style.display='none';setTimeout(()=>instInput.focus(),50);}}
+});
+function submitPIN(){
+  if(instInput.value.trim()===INSTRUCTOR_PIN){instructorUnlocked=true;instPrompt.style.display='none';codeTable.style.display='block';instError.style.display='none';btnInst.innerHTML='<i class="ti ti-lock-open" style="font-size:12px;"></i> Hide';btnInst.setAttribute('aria-expanded','true');announce('Instructor panel unlocked.');}
+  else{instError.style.display='block';instInput.value='';instInput.style.borderColor='#A32D2D';setTimeout(()=>{instInput.style.borderColor='';},1000);instInput.focus();}
+}
+document.getElementById('instructor-submit').addEventListener('click',submitPIN);
+document.getElementById('instructor-cancel').addEventListener('click',()=>{instPrompt.style.display='none';btnInst.setAttribute('aria-expanded','false');});
+instInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitPIN();if(e.key==='Escape'){instPrompt.style.display='none';btnInst.setAttribute('aria-expanded','false');}});
+document.getElementById('btn-lock-instructor').addEventListener('click',()=>{instructorUnlocked=false;codeTable.style.display='none';btnInst.innerHTML='<i class="ti ti-lock" style="font-size:12px;"></i> Unlock';btnInst.setAttribute('aria-expanded','false');announce('Instructor panel locked.');});
 
-btnShowInstructor.addEventListener('click',()=>{if(instructorUnlocked){const v=codeTable.style.display!=='none';codeTable.style.display=v?'none':'block';btnShowInstructor.innerHTML=v?'<i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock':'<i class="ti ti-lock-open" style="font-size:12px;" aria-hidden="true"></i> Hide';btnShowInstructor.setAttribute('aria-expanded',String(!v));}else{const v=instructorPrompt.style.display!=='none';instructorPrompt.style.display=v?'none':'block';btnShowInstructor.setAttribute('aria-expanded',String(!v));if(!v){instructorInput.value='';instructorError.style.display='none';setTimeout(()=>instructorInput.focus(),50);}}});
-function submitInstructorPIN(){if(instructorInput.value.trim()===INSTRUCTOR_PIN){instructorUnlocked=true;instructorPrompt.style.display='none';codeTable.style.display='block';instructorError.style.display='none';btnShowInstructor.innerHTML='<i class="ti ti-lock-open" style="font-size:12px;" aria-hidden="true"></i> Hide';btnShowInstructor.setAttribute('aria-expanded','true');announce('Instructor panel unlocked.');}else{instructorError.style.display='block';instructorInput.value='';instructorInput.style.borderColor='#A32D2D';setTimeout(()=>{instructorInput.style.borderColor='';},1000);instructorInput.focus();announce('Incorrect PIN.');}}
-document.getElementById('instructor-submit').addEventListener('click',submitInstructorPIN);
-document.getElementById('instructor-cancel').addEventListener('click',()=>{instructorPrompt.style.display='none';instructorError.style.display='none';btnShowInstructor.setAttribute('aria-expanded','false');});
-instructorInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitInstructorPIN();if(e.key==='Escape'){instructorPrompt.style.display='none';btnShowInstructor.setAttribute('aria-expanded','false');}});
-document.getElementById('btn-lock-instructor').addEventListener('click',()=>{instructorUnlocked=false;codeTable.style.display='none';btnShowInstructor.innerHTML='<i class="ti ti-lock" style="font-size:12px;" aria-hidden="true"></i> Unlock';btnShowInstructor.setAttribute('aria-expanded','false');announce('Instructor panel locked.');});
-
+// ── Access code modal ───────────────────────────────────────────────────────
+const unlockedModels=new Set();
+let pendingIdx=null;
 const modal=document.getElementById('code-modal');
 const codeInput=document.getElementById('code-input');
 const codeError=document.getElementById('code-error');
-function showCodeModal(idx){pendingModelIndex=idx;codeInput.value='';codeError.style.display='none';modal.style.display='flex';setTimeout(()=>codeInput.focus(),50);announce('Access code required for '+MODELS[idx].label+'.');}
-function hideCodeModal(){modal.style.display='none';sel.value='';document.getElementById('model-status').textContent='';pendingModelIndex=null;announce('Cancelled.');}
-function submitCode(){const entered=codeInput.value.trim().toUpperCase(),correct=MODELS[pendingModelIndex].code.toUpperCase();if(entered===correct){unlockedModels.add(pendingModelIndex);const opt=sel.options[pendingModelIndex+1];if(opt)opt.textContent='🔓 '+MODELS[pendingModelIndex].label;const sc=document.getElementById('code-status-'+pendingModelIndex);if(sc)sc.innerHTML='<span style="color:#2B6A82;font-weight:500;">✓ Unlocked</span>';modal.style.display='none';codeError.style.display='none';loadModelFromURL(MODELS[pendingModelIndex].url,MODELS[pendingModelIndex].label);pendingModelIndex=null;}else{codeError.style.display='block';codeInput.value='';codeInput.focus();codeInput.style.borderColor='#A32D2D';setTimeout(()=>{codeInput.style.borderColor='';},1000);announce('Incorrect code.');}}
+function showModal(idx){pendingIdx=idx;codeInput.value='';codeError.style.display='none';modal.style.display='flex';setTimeout(()=>codeInput.focus(),50);}
+function hideModal(){modal.style.display='none';sel.value='';document.getElementById('model-status').textContent='';pendingIdx=null;}
+function submitCode(){
+  const entered=codeInput.value.trim().toUpperCase(),correct=MODELS[pendingIdx].code.toUpperCase();
+  if(entered===correct){unlockedModels.add(pendingIdx);const o=sel.options[pendingIdx+1];if(o)o.textContent='🔓 '+MODELS[pendingIdx].label;const cs=document.getElementById('cs-'+pendingIdx);if(cs)cs.innerHTML='<span style="color:#2B6A82;font-weight:500;">✓ Unlocked</span>';modal.style.display='none';loadModel(MODELS[pendingIdx].url,MODELS[pendingIdx].label);pendingIdx=null;}
+  else{codeError.style.display='block';codeInput.value='';codeInput.focus();codeInput.style.borderColor='#A32D2D';setTimeout(()=>{codeInput.style.borderColor='';},1000);}
+}
 document.getElementById('code-submit').addEventListener('click',submitCode);
-document.getElementById('code-cancel').addEventListener('click',hideCodeModal);
-codeInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitCode();if(e.key==='Escape')hideCodeModal();});
+document.getElementById('code-cancel').addEventListener('click',hideModal);
+codeInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitCode();if(e.key==='Escape')hideModal();});
 modal.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=modal.querySelectorAll('button,input');const first=f[0],last=f[f.length-1];if(e.shiftKey?document.activeElement===first:document.activeElement===last){e.preventDefault();(e.shiftKey?last:first).focus();}});
-sel.addEventListener('change',()=>{const idx=parseInt(sel.value);if(isNaN(idx)){document.getElementById('model-status').textContent='';return;}if(unlockedModels.has(idx))loadModelFromURL(MODELS[idx].url,MODELS[idx].label);else showCodeModal(idx);});
+sel.addEventListener('change',()=>{const idx=parseInt(sel.value);if(isNaN(idx)){document.getElementById('model-status').textContent='';return;}if(unlockedModels.has(idx))loadModel(MODELS[idx].url,MODELS[idx].label);else showModal(idx);});
 
-function parseSTL(buf){const view=new DataView(buf);let binary=false;if(buf.byteLength>=84){const n=view.getUint32(80,true);binary=(80+4+n*50)===buf.byteLength;}const pos=[],nor=[];if(binary){const n=view.getUint32(80,true);let o=84;for(let i=0;i<n;i++){const nx=view.getFloat32(o,true),ny=view.getFloat32(o+4,true),nz=view.getFloat32(o+8,true);o+=12;for(let v=0;v<3;v++){pos.push(view.getFloat32(o,true),view.getFloat32(o+4,true),view.getFloat32(o+8,true));nor.push(nx,ny,nz);o+=12;}o+=2;}}else{const lines=new TextDecoder().decode(buf).split('\n');let nx=0,ny=0,nz=0;for(const r of lines){const l=r.trim();if(l.startsWith('facet normal')){const p=l.split(/\s+/);nx=+p[2];ny=+p[3];nz=+p[4];}else if(l.startsWith('vertex')){const p=l.split(/\s+/);pos.push(+p[1],+p[2],+p[3]);nor.push(nx,ny,nz);}}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(nor),3));return geo;}
-
+// ── THREE.js setup ──────────────────────────────────────────────────────────
 const canvas=document.getElementById('three-canvas');
 const viewport=document.getElementById('viewport');
 const statusBar=document.getElementById('status-bar');
 const measureHint=document.getElementById('measure-hint');
 const snapIndicator=document.getElementById('snap-indicator');
 const viewLabel=document.getElementById('view-label');
-let viewLabelTimer=null;
+let vlTimer=null;
 function announce(m){statusBar.textContent=m;}
-function showViewLabel(t){viewLabel.textContent=t;viewLabel.style.display='block';clearTimeout(viewLabelTimer);viewLabelTimer=setTimeout(()=>viewLabel.style.display='none',1800);}
+function showVL(t){viewLabel.textContent=t;viewLabel.style.display='block';clearTimeout(vlTimer);vlTimer=setTimeout(()=>viewLabel.style.display='none',1800);}
 
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -330,61 +316,49 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x111C28);
 const camera=new THREE.PerspectiveCamera(45,1,0.001,10000);
 camera.position.set(0,1.5,4);
-// Orthographic camera — updated whenever ortho mode is active
 let orthoCamera=new THREE.OrthographicCamera(-1,1,1,-1,0.001,10000);
 let isOrtho=false;
-function getActiveCamera(){return isOrtho?orthoCamera:camera;}
-function syncOrthoCamera(){
-  // Match ortho camera position/target to perspective camera
-  orthoCamera.position.copy(camera.position);
-  orthoCamera.quaternion.copy(camera.quaternion);
-  // Set ortho frustum based on distance to target and viewport size
-  const dist=camera.position.distanceTo(controls.target);
-  const aspect=viewport.clientWidth/viewport.clientHeight;
-  const halfH=dist*Math.tan((camera.fov/2)*(Math.PI/180));
-  const halfW=halfH*aspect;
-  orthoCamera.left=-halfW; orthoCamera.right=halfW;
-  orthoCamera.top=halfH; orthoCamera.bottom=-halfH;
-  orthoCamera.near=0.001; orthoCamera.far=camera.far;
-  orthoCamera.updateProjectionMatrix();
-}
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;controls.dampingFactor=0.07;controls.screenSpacePanning=true;
 controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
 scene.add(new THREE.AmbientLight(0xffffff,0.55));
-const dir=new THREE.DirectionalLight(0xffffff,1.4);dir.position.set(5,10,7);scene.add(dir);
-const fill=new THREE.DirectionalLight(0x9FC8D6,0.4);fill.position.set(-5,-2,-5);scene.add(fill);
-const rim=new THREE.DirectionalLight(0xffffff,0.6);rim.position.set(-3,5,-8);scene.add(rim);
+const dL=new THREE.DirectionalLight(0xffffff,1.4);dL.position.set(5,10,7);scene.add(dL);
+const fL=new THREE.DirectionalLight(0x9FC8D6,0.4);fL.position.set(-5,-2,-5);scene.add(fL);
+const rL=new THREE.DirectionalLight(0xffffff,0.5);rL.position.set(-3,5,-8);scene.add(rL);
 const grid=new THREE.GridHelper(10,20,0x1E3245,0x162535);scene.add(grid);
 
 let currentModel=null,defaultCamPos=null,defaultTarget=null;
-let wireframeOn=false,measureMode=null,modelSize=1,vertexPositions=[];
+let modelSize=1,vertexPositions=[];
+let wireframeOn=false,measureMode=null;
+let snapSphere=null;
 let measureObjects=[],measureCount=0;
-let rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
-// Per-mode state
 let linearPt1=null,linearMarker1=null,linearPreview=null;
 let radialPts=[],radialMarkers=[],radialPreview=null;
-// Angle state: click vertex (pt1), then two arm points (pt2, pt3)
 let anglePts=[],angleMarkers=[];
-// Stored circle centers from radial measurements (for snap)
-let circleCenters=[];centerlineSegs=[];
-// Stored centerline segments [{p1,p2},...] for intersection snap
-let centerlineSegs=[];
-let snapSphere=null;
+let circleCenters=[],centerlineSegs=[];
+let rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
+
+function syncOrtho(){
+  orthoCamera.position.copy(camera.position);
+  orthoCamera.quaternion.copy(camera.quaternion);
+  const dist=camera.position.distanceTo(controls.target);
+  const aspect=viewport.clientWidth/viewport.clientHeight;
+  const halfH=dist*Math.tan((camera.fov/2)*(Math.PI/180));
+  orthoCamera.left=-halfH*aspect;orthoCamera.right=halfH*aspect;
+  orthoCamera.top=halfH;orthoCamera.bottom=-halfH;
+  orthoCamera.near=0.001;orthoCamera.far=camera.far;
+  orthoCamera.updateProjectionMatrix();
+}
+function activeCam(){return isOrtho?orthoCamera:camera;}
 
 function resize(){
   const w=viewport.clientWidth,h=viewport.clientHeight;
-  renderer.setSize(w,h);
-  camera.aspect=w/h;camera.updateProjectionMatrix();
-  if(isOrtho)syncOrthoCamera();
+  renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+  if(isOrtho)syncOrtho();
 }
 resize();new ResizeObserver(resize).observe(viewport);
-(function loop(){
-  requestAnimationFrame(loop);
-  controls.update();
-  if(isOrtho)syncOrthoCamera();
-  renderer.render(scene,isOrtho?orthoCamera:camera);
-})();
+
+(function loop(){requestAnimationFrame(loop);controls.update();if(isOrtho)syncOrtho();renderer.render(scene,isOrtho?orthoCamera:camera);})();
 
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
 canvas.addEventListener('mousedown',e=>{if(e.button!==2)return;e.preventDefault();rightDragActive=true;rightDragStart={x:e.clientX,y:e.clientY};rightDragCamStart=camera.position.clone();});
@@ -392,186 +366,200 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 window.addEventListener('mousemove',e=>{if(!rightDragActive)return;const dx=e.clientX-rightDragStart.x,dy=e.clientY-rightDragStart.y;const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(rightDragCamStart,controls.target));sph.theta-=dx*0.008;sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi-dy*0.008));camera.position.setFromSpherical(sph).add(controls.target);camera.lookAt(controls.target);});
 window.addEventListener('mouseup',e=>{if(e.button===2)rightDragActive=false;});
 
-function fitCamera(obj){const box=new THREE.Box3().setFromObject(obj);const size=new THREE.Vector3(),center=new THREE.Vector3();box.getSize(size);box.getCenter(center);obj.position.sub(center);grid.position.y=-size.y/2;modelSize=Math.max(size.x,size.y,size.z)||1;const fov=camera.fov*(Math.PI/180),dist=(modelSize/2/Math.tan(fov/2))*2.2;camera.position.set(dist*0.6,dist*0.4,dist);camera.near=dist*0.001;camera.far=dist*100;camera.updateProjectionMatrix();controls.target.set(0,0,0);controls.minDistance=dist*0.05;controls.maxDistance=dist*10;controls.update();defaultCamPos=camera.position.clone();defaultTarget=controls.target.clone();}
-function animateCameraTo(endPos,label){const startPos=camera.position.clone(),duration=320,start=performance.now();function step(now){const t=Math.min((now-start)/duration,1),e=t<0.5?2*t*t:1-2*(1-t)*(1-t);camera.position.lerpVectors(startPos,endPos,e);camera.lookAt(controls.target);if(t<1)requestAnimationFrame(step);else controls.update();}requestAnimationFrame(step);if(label){showViewLabel(label);announce(label+' view.');}}
-const VIEW_MAP={'front':['Front',v=>v.clone().add(new THREE.Vector3(0,0,1))],'back':['Back',v=>v.clone().add(new THREE.Vector3(0,0,-1))],'right':['Right',v=>v.clone().add(new THREE.Vector3(1,0,0))],'left':['Left',v=>v.clone().add(new THREE.Vector3(-1,0,0))],'top':['Top',v=>v.clone().add(new THREE.Vector3(0,1,0.0001))],'bottom':['Bottom',v=>v.clone().add(new THREE.Vector3(0,-1,0.0001))]};
-function setView(key){if(!currentModel){announce('Load a model first.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
-function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.isMesh)return;const pos=child.geometry.attributes.position;if(!pos)return;const mat=child.matrixWorld;for(let i=0;i<pos.count;i++)vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));});}
+function fitCamera(obj){
+  const box=new THREE.Box3().setFromObject(obj);
+  const sz=new THREE.Vector3(),cen=new THREE.Vector3();
+  box.getSize(sz);box.getCenter(cen);
+  obj.position.sub(cen);
+  grid.position.y=-sz.y/2;
+  modelSize=Math.max(sz.x,sz.y,sz.z)||1;
+  const fov=camera.fov*(Math.PI/180),dist=(modelSize/2/Math.tan(fov/2))*2.2;
+  camera.position.set(dist*0.6,dist*0.4,dist);
+  camera.near=dist*0.001;camera.far=dist*100;camera.updateProjectionMatrix();
+  controls.target.set(0,0,0);controls.minDistance=dist*0.05;controls.maxDistance=dist*10;controls.update();
+  defaultCamPos=camera.position.clone();defaultTarget=controls.target.clone();
+}
+
+function animateTo(endPos,label){
+  const startPos=camera.position.clone(),dur=320,start=performance.now();
+  function step(now){const t=Math.min((now-start)/dur,1),e=t<0.5?2*t*t:1-2*(1-t)*(1-t);camera.position.lerpVectors(startPos,endPos,e);camera.lookAt(controls.target);if(t<1)requestAnimationFrame(step);else controls.update();}
+  requestAnimationFrame(step);if(label){showVL(label);announce(label+' view.');}
+}
+
+const VM={'front':['Front',new THREE.Vector3(0,0,1)],'back':['Back',new THREE.Vector3(0,0,-1)],'right':['Right',new THREE.Vector3(1,0,0)],'left':['Left',new THREE.Vector3(-1,0,0)],'top':['Top',new THREE.Vector3(0,1,0.0001)],'bottom':['Bottom',new THREE.Vector3(0,-1,0.0001)]};
+function setView(key){
+  if(!currentModel){announce('Load a model first.');return;}
+  const[label,dir]=VM[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5;
+  const t=controls.target.clone();
+  animateTo(dir.clone().normalize().multiplyScalar(d).add(t),label);
+}
+function setIso(az){
+  if(!currentModel){announce('Load a model first.');return;}
+  const d=camera.position.distanceTo(controls.target)||modelSize*2.5;
+  const t=controls.target.clone();
+  const el=Math.atan(1/Math.sqrt(2));
+  const azR=az*(Math.PI/180);
+  const p=new THREE.Vector3(t.x+d*Math.cos(el)*Math.sin(azR),t.y+d*Math.sin(el),t.z+d*Math.cos(el)*Math.cos(azR));
+  animateTo(p,'Isometric');
+}
+
+function extractVertices(obj){
+  vertexPositions=[];
+  obj.traverse(child=>{
+    if(!child.isMesh)return;
+    const pos=child.geometry.attributes.position;
+    if(!pos)return;
+    const mat=child.matrixWorld;
+    for(let i=0;i<pos.count;i++)
+      vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));
+  });
+}
+
 function makeMat(){return new THREE.MeshStandardMaterial({color:0x9BBFD4,roughness:0.45,metalness:0.15,side:THREE.DoubleSide});}
-// Edge lines removed for stability
-function loadModelFromURL(url,label){
+
+function parseSTL(buf){
+  const view=new DataView(buf);let binary=false;
+  if(buf.byteLength>=84){const n=view.getUint32(80,true);binary=(80+4+n*50)===buf.byteLength;}
+  const pos=[],nor=[];
+  if(binary){const n=view.getUint32(80,true);let o=84;for(let i=0;i<n;i++){const nx=view.getFloat32(o,true),ny=view.getFloat32(o+4,true),nz=view.getFloat32(o+8,true);o+=12;for(let v=0;v<3;v++){pos.push(view.getFloat32(o,true),view.getFloat32(o+4,true),view.getFloat32(o+8,true));nor.push(nx,ny,nz);o+=12;}o+=2;}}
+  else{const lines=new TextDecoder().decode(buf).split('\n');let nx=0,ny=0,nz=0;for(const r of lines){const l=r.trim();if(l.startsWith('facet normal')){const p=l.split(/\s+/);nx=+p[2];ny=+p[3];nz=+p[4];}else if(l.startsWith('vertex')){const p=l.split(/\s+/);pos.push(+p[1],+p[2],+p[3]);nor.push(nx,ny,nz);}}}
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));
+  geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(nor),3));
+  return geo;
+}
+
+function loadModel(url,label){
   const ext=url.split('?')[0].split('.').pop().toLowerCase();
   document.getElementById('loading-indicator').style.display='flex';
   document.getElementById('drop-overlay').style.display='none';
   document.getElementById('model-status').textContent='Loading…';
   announce('Loading '+label+'…');
-  cancelMeasure();clearAllMeasurements();
+  cancelMeasure();clearAll();
   if(currentModel){scene.remove(currentModel);currentModel=null;}
-  const done=(obj)=>{
+  circleCenters=[];centerlineSegs=[];
+
+  function done(obj){
     currentModel=obj;
     scene.add(currentModel);
     fitCamera(currentModel);
-    setTimeout(()=>extractVertices(currentModel),150);
+    setTimeout(()=>extractVertices(currentModel),200);
     document.getElementById('loading-indicator').style.display='none';
     document.getElementById('model-status').textContent='✓ Loaded';
-    announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');
-  };
-  const fail=()=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';document.getElementById('model-status').textContent='⚠ Not found';sel.value='';announce('Could not load '+label+'. Check file exists at: '+url);};
-  if(ext==='stl'){fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}).catch(e=>{console.error(e);fail();});}
-  else if(ext==='glb'||ext==='gltf'){new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);}
-  else if(ext==='obj'){new THREE.OBJLoader().load(url,obj=>{obj.traverse(c=>{if(c.isMesh)c.material=makeMat();});done(obj);},undefined,fail);}
-  else fail();
+    announce('Loaded: '+label+'.');
+  }
+  function fail(e){
+    console.error(e);
+    document.getElementById('loading-indicator').style.display='none';
+    document.getElementById('drop-overlay').style.display='flex';
+    document.getElementById('model-status').textContent='⚠ Not found';
+    sel.value='';
+    announce('Could not load '+label+'. Check file exists at: '+url);
+  }
+
+  if(ext==='stl'){
+    fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();})
+      .then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);})
+      .catch(fail);
+  }else if(ext==='glb'||ext==='gltf'){
+    new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);
+  }else if(ext==='obj'){
+    new THREE.OBJLoader().load(url,obj=>{obj.traverse(c=>{if(c.isMesh)c.material=makeMat();});done(obj);},undefined,fail);
+  }else{fail(new Error('Unsupported format'));}
 }
 
-function zoomBy(f){const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();}
-function rotateBy(az,pol){const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(camera.position,controls.target));sph.theta+=az*(Math.PI/180);sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi+pol*(Math.PI/180)));camera.position.setFromSpherical(sph).add(controls.target);controls.update();}
-function panBy(x,y){const v=new THREE.Vector3(x,y,0).applyQuaternion(camera.quaternion);camera.position.add(v);controls.target.add(v);controls.update();}
-function resetCamera(){if(!defaultCamPos)return;animateCameraTo(defaultCamPos,'Home');setTimeout(()=>{controls.target.copy(defaultTarget);controls.update();},0);}
-function toggleWireframe(){wireframeOn=!wireframeOn;const btn=document.getElementById('btn-wire');btn.setAttribute('aria-pressed',String(wireframeOn));btn.classList.toggle('active',wireframeOn);if(currentModel)currentModel.traverse(c=>{if(c.isMesh)c.material.wireframe=wireframeOn;});announce('Wireframe '+(wireframeOn?'on':'off')+'.');}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function toScreen(v3){const cam=isOrtho?orthoCamera:camera;const v=v3.clone().project(cam);return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
-function getMouseXY(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
-function getRayHit(e){if(!currentModel)return null;const r=canvas.getBoundingClientRect();const mouse=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);const rc=new THREE.Raycaster();rc.setFromCamera(mouse,isOrtho?orthoCamera:camera);const hits=rc.intersectObject(currentModel,true);return hits.length?hits[0].point.clone():null;}
-function findSnapVertex(mx,my,threshold=18){if(!vertexPositions.length)return null;let best=null,bestDist=Infinity;for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<threshold&&d<bestDist){bestDist=d;best=v.clone();}}return best;}
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function toScreen(v3){const v=v3.clone().project(activeCam());return new THREE.Vector2((v.x+1)/2*viewport.clientWidth,(-v.y+1)/2*viewport.clientHeight);}
+function getXY(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function getRayHit(e){
+  if(!currentModel)return null;
+  const r=canvas.getBoundingClientRect();
+  const mouse=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  const rc=new THREE.Raycaster();rc.setFromCamera(mouse,activeCam());
+  const hits=rc.intersectObject(currentModel,true);
+  return hits.length?hits[0].point.clone():null;
+}
+function findVertexSnap(mx,my,thr=18){
+  if(!vertexPositions.length)return null;
+  let best=null,bestD=Infinity;
+  for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<thr&&d<bestD){bestD=d;best=v.clone();}}
+  return best;
+}
+function findCCSnap(mx,my,thr=22){
+  if(!circleCenters.length)return null;
+  let best=null,bestD=Infinity;
+  for(const c of circleCenters){const s=toScreen(c),d=Math.hypot(s.x-mx,s.y-my);if(d<thr&&d<bestD){bestD=d;best=c.clone();}}
+  return best;
+}
+function findCLSnap(mx,my,thr=20){
+  if(!centerlineSegs.length)return null;
+  let best=null,bestD=Infinity;
+  for(const seg of centerlineSegs){
+    for(let i=0;i<=32;i++){
+      const pt=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,i/32);
+      const s=toScreen(pt);const d=Math.hypot(s.x-mx,s.y-my);
+      if(d<thr&&d<bestD){bestD=d;best=pt.clone();}
+    }
+  }
+  return best;
+}
+function getBestSnap(mx,my){
+  const cl=findCLSnap(mx,my);if(cl)return{pt:cl,type:'cl'};
+  const cc=findCCSnap(mx,my);if(cc)return{pt:cc,type:'cc'};
+  const v=findVertexSnap(mx,my);if(v)return{pt:v,type:'vert'};
+  return null;
+}
 function makeSphere(pt,color,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r||modelSize*0.014),new THREE.MeshBasicMaterial({color}));m.position.copy(pt);return m;}
-function makeCircleGeom(center,radius,normal,segments){const pts=[],q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal.clone().normalize());for(let i=0;i<=segments;i++){const a=(i/segments)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius).applyQuaternion(q).add(center));}return new THREE.BufferGeometry().setFromPoints(pts);}
+function makeCircleGeom(center,radius,normal,segs){
+  const pts=[],q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),normal.clone().normalize());
+  for(let i=0;i<=segs;i++){const a=(i/segs)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius).applyQuaternion(q).add(center));}
+  return new THREE.BufferGeometry().setFromPoints(pts);
+}
 
-// ── 3-Point Circumscribed Circle ───────────────────────────────────────────
-function circumscribedCircle(p1,p2,p3){
-  // Compute circumcenter and radius of circle through 3 3D points
+// ── 3-point circumscribed circle ─────────────────────────────────────────────
+function circumscribed(p1,p2,p3){
   const v1=new THREE.Vector3().subVectors(p2,p1);
   const v2=new THREE.Vector3().subVectors(p3,p1);
   const normal=new THREE.Vector3().crossVectors(v1,v2);
-  const nLen=normal.length();
-  if(nLen<1e-10){return null;} // collinear
-  normal.divideScalar(nLen);
-  // Build local 2D plane
+  if(normal.length()<1e-10)return null;
+  normal.normalize();
   const ax=v1.clone().normalize();
   const ay=new THREE.Vector3().crossVectors(normal,ax).normalize();
-  // Project to 2D
   function to2d(p){const d=new THREE.Vector3().subVectors(p,p1);return[d.dot(ax),d.dot(ay)];}
-  const [ax1,ay1]=to2d(p1); // [0,0]
-  const [ax2,ay2]=to2d(p2);
-  const [ax3,ay3]=to2d(p3);
-  // Circumcenter formula
-  const D=2*(ax2*ay3-ax3*ay2); // ax1=ay1=0
-  if(Math.abs(D)<1e-10){return null;}
+  const[,]=[0,0];const[ax2,ay2]=to2d(p2);const[ax3,ay3]=to2d(p3);
+  const D=2*(ax2*ay3-ax3*ay2);if(Math.abs(D)<1e-10)return null;
   const ux=((ax2*ax2+ay2*ay2)*ay3-(ax3*ax3+ay3*ay3)*ay2)/D;
   const uy=((ax3*ax3+ay3*ay3)*ax2-(ax2*ax2+ay2*ay2)*ax3)/D;
   const radius=Math.sqrt(ux*ux+uy*uy);
   const center=p1.clone().addScaledVector(ax,ux).addScaledVector(ay,uy);
-  return{center,radius,normal};
+  return{center,radius,normal,ax,ay};
 }
 
-// ── Angle between two vectors (3 clicks: vertex, arm1, arm2) ──────────────
-function computeAngle(vertex, arm1, arm2){
+// ── Angle computation ─────────────────────────────────────────────────────────
+function computeAngle(vertex,arm1,arm2){
   const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
   const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
-  const dot=Math.max(-1,Math.min(1,v1.dot(v2)));
-  return THREE.MathUtils.radToDeg(Math.acos(dot));
+  return THREE.MathUtils.radToDeg(Math.acos(Math.max(-1,Math.min(1,v1.dot(v2)))));
 }
-
 function makeAngleArc(vertex,arm1,arm2,radius){
-  // Draw an arc in the plane of the 3 points showing the angle
   const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
   const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
   const normal=new THREE.Vector3().crossVectors(v1,v2).normalize();
-  if(normal.length()<0.001) return null;
+  if(normal.length()<0.001)return null;
   const angleDeg=computeAngle(vertex,arm1,arm2);
   const angleRad=THREE.MathUtils.degToRad(angleDeg);
   const pts=[];
-  const segments=48;
-  for(let i=0;i<=segments;i++){
-    const t=(i/segments)*angleRad;
-    // Rodrigues rotation of v1 around normal by t
+  for(let i=0;i<=48;i++){
+    const t=(i/48)*angleRad;
     const cosT=Math.cos(t),sinT=Math.sin(t);
-    const rotated=new THREE.Vector3()
-      .addScaledVector(v1,cosT)
-      .addScaledVector(new THREE.Vector3().crossVectors(normal,v1),sinT)
-      .addScaledVector(normal,normal.dot(v1)*(1-cosT));
-    pts.push(new THREE.Vector3().copy(vertex).addScaledVector(rotated,radius));
+    const cn=normal.dot(v1);
+    const rot=v1.clone().multiplyScalar(cosT).add(new THREE.Vector3().crossVectors(normal,v1).multiplyScalar(sinT)).addScaledVector(normal,cn*(1-cosT));
+    pts.push(new THREE.Vector3().copy(vertex).addScaledVector(rot,radius));
   }
   return new THREE.BufferGeometry().setFromPoints(pts);
 }
 
-function makeAngleLabel(vertex,arm1,arm2,angleDeg,radius,id){
-  // Create a text sprite showing the angle at the arc midpoint
-  const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
-  const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
-  const mid=new THREE.Vector3().addVectors(v1,v2).normalize();
-  const labelPos=new THREE.Vector3().copy(vertex).addScaledVector(mid,radius*1.4);
-  // Use a canvas texture for the label
-  const canvas2=document.createElement('canvas');
-  canvas2.width=256;canvas2.height=64;
-  const ctx2=canvas2.getContext('2d');
-  ctx2.fillStyle='rgba(94,53,177,0.9)';
-  ctx2.beginPath();
-  const rx=4,ry=4,rw=248,rh=56,rr=10;
-  ctx2.moveTo(rx+rr,ry);ctx2.lineTo(rx+rw-rr,ry);ctx2.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);
-  ctx2.lineTo(rx+rw,ry+rh-rr);ctx2.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);
-  ctx2.lineTo(rx+rr,ry+rh);ctx2.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);
-  ctx2.lineTo(rx,ry+rr);ctx2.arcTo(rx,ry,rx+rr,ry,rr);ctx2.closePath();
-  ctx2.fill();
-  ctx2.fillStyle='white';ctx2.font='bold 28px system-ui';
-  ctx2.textAlign='center';ctx2.textBaseline='middle';
-  ctx2.fillText(angleDeg.toFixed(2)+'°',128,34);
-  const tex=new THREE.CanvasTexture(canvas2);
-  const mat=new THREE.SpriteMaterial({map:tex,depthTest:false});
-  const sprite=new THREE.Sprite(mat);
-  sprite.position.copy(labelPos);
-  const scale=modelSize*0.5;
-  sprite.scale.set(scale,scale/4,1);
-  return sprite;
-}
-
-// Find snap to stored circle centers
-function findSnapCircleCenter(mx,my,threshold=22){
-  if(!circleCenters.length) return null;
-  let best=null,bestDist=Infinity;
-  circleCenters.forEach(cc=>{
-    const s=toScreen(cc);
-    const d=Math.hypot(s.x-mx,s.y-my);
-    if(d<threshold&&d<bestDist){bestDist=d;best=cc.clone();}
-  });
-  return best;
-}
-
-// Snap to centerline/geometry intersection
-// Projects mouse ray onto each centerline segment and checks distance
-function findSnapCenterlineIntersect(mx,my,threshold=20){
-  if(!centerlineSegs.length||!currentModel) return null;
-  // Get mouse ray in world space
-  const rect=canvas.getBoundingClientRect();
-  const mouseNDC=new THREE.Vector2(
-    ((mx+rect.left-rect.left)/rect.width)*2-1,
-    -((my+rect.top-rect.top)/rect.height)*2+1
-  );
-  // Actually use screen-space: find points on centerline segments
-  // that are close to the mouse cursor in screen space
-  let best=null, bestDist=Infinity;
-  centerlineSegs.forEach(seg=>{
-    // Sample points along the segment and find closest to mouse in screen space
-    const steps=32;
-    for(let i=0;i<=steps;i++){
-      const t=i/steps;
-      const pt=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,t);
-      const sc=toScreen(pt);
-      const d=Math.hypot(sc.x-mx,sc.y-my);
-      if(d<threshold&&d<bestDist){
-        bestDist=d;
-        best=pt.clone();
-      }
-    }
-    // Also snap to center point itself
-    const sc=toScreen(seg.center);
-    const d=Math.hypot(sc.x-mx,sc.y-my);
-    if(d<threshold&&d<bestDist){bestDist=d;best=seg.center.clone();}
-  });
-  return best;
-}
-
-// ── Measurement state management ───────────────────────────────────────────
+// ── Measurement helpers ───────────────────────────────────────────────────────
 function cancelMeasure(){
   if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
   if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
@@ -584,409 +572,234 @@ function cancelMeasure(){
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   snapIndicator.style.display='none';
 }
-
-function clearAllMeasurements(){
+function clearAll(){
   measureObjects.filter(o=>o.type==='measurement').forEach(e=>e.obj.forEach(o=>scene.remove(o)));
   measureObjects=measureObjects.filter(o=>o.type!=='measurement');
   document.getElementById('measure-list').innerHTML='';
   document.getElementById('measure-panel').style.display='none';
   circleCenters=[];centerlineSegs=[];
 }
-
-function addMeasureRow(id,type,text,objs){
+function addRow(id,type,text,objs){
   document.getElementById('measure-panel').style.display='block';
   measureObjects.push({type:'measurement',id,obj:objs});
   const row=document.createElement('div');row.className='mrow';row.id='mrow-'+id;
-  const badgeLabel=type==='linear'?'linear':type==='radial'?'radial':'angle';row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+badgeLabel+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';
-  const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete measurement '+id);del.style.cssText='padding:2px 7px;font-size:11px;';
-  del.innerHTML='<i class="ti ti-x" style="font-size:12px;" aria-hidden="true"></i>';
-  del.addEventListener('click',()=>deleteMeasure(id));
+  const badge=type==='linear'?'linear':type==='radial'?'radial':'angle';
+  row.innerHTML='<span><span class="mbadge mbadge-'+type+'">'+badge+'</span><span style="color:#2C2C2A;margin-left:6px;">'+text+'</span></span>';
+  const del=document.createElement('button');del.className='tb-btn';del.setAttribute('aria-label','Delete '+id);del.style.cssText='padding:2px 7px;font-size:11px;';
+  del.innerHTML='<i class="ti ti-x" style="font-size:12px;"></i>';
+  del.addEventListener('click',()=>{
+    const e=measureObjects.find(o=>o.type==='measurement'&&o.id===id);if(e)e.obj.forEach(o=>scene.remove(o));
+    measureObjects=measureObjects.filter(o=>!(o.type==='measurement'&&o.id===id));
+    const r=document.getElementById('mrow-'+id);if(r)r.remove();
+    if(!document.getElementById('measure-list').children.length)document.getElementById('measure-panel').style.display='none';
+    announce('Deleted.');
+  });
   row.appendChild(del);document.getElementById('measure-list').appendChild(row);
 }
 
-function deleteMeasure(id){
-  const entry=measureObjects.find(o=>o.type==='measurement'&&o.id===id);
-  if(entry)entry.obj.forEach(o=>scene.remove(o));
-  measureObjects=measureObjects.filter(o=>!(o.type==='measurement'&&o.id===id));
-  const row=document.getElementById('mrow-'+id);if(row)row.remove();
-  if(!document.getElementById('measure-list').children.length)document.getElementById('measure-panel').style.display='none';
-  announce('Measurement '+id+' deleted.');
-}
-
-function setMeasureMode(mode){
+function setMode(mode){
   cancelMeasure();
+  const btns=['linear','radial','angle'];
   if(measureMode===mode){
-    measureMode=null;controls.enabled=true;
-    measureHint.style.display='none';
-    document.getElementById('btn-linear').setAttribute('aria-pressed','false');
-    document.getElementById('btn-linear').classList.remove('active');
-    document.getElementById('btn-radial').setAttribute('aria-pressed','false');
-    document.getElementById('btn-radial').classList.remove('active');
-    document.getElementById('btn-angle').setAttribute('aria-pressed','false');
-    document.getElementById('btn-angle').classList.remove('active');
+    measureMode=null;controls.enabled=true;measureHint.style.display='none';
+    btns.forEach(b=>{document.getElementById('btn-'+b).setAttribute('aria-pressed','false');document.getElementById('btn-'+b).classList.remove('active');});
     announce('Measure mode off.');return;
   }
-  measureMode=mode;controls.enabled=false;
-  measureHint.style.display='block';
-  if(mode==='linear'){
-    measureHint.style.background='rgba(43,106,130,0.92)';
-    measureHint.textContent='Click point 1 (snaps to vertices)';
-    document.getElementById('btn-linear').setAttribute('aria-pressed','true');
-    document.getElementById('btn-linear').classList.add('active');
-    document.getElementById('btn-radial').setAttribute('aria-pressed','false');
-    document.getElementById('btn-radial').classList.remove('active');
-    document.getElementById('btn-angle').setAttribute('aria-pressed','false');
-    document.getElementById('btn-angle').classList.remove('active');
-    announce('Linear measure: click 2 points.');
-  } else if(mode==='radial'){
-    measureHint.style.background='rgba(196,114,26,0.92)';
-    measureHint.textContent='Click point 1 of 3 on the curve';
-    document.getElementById('btn-radial').setAttribute('aria-pressed','true');
-    document.getElementById('btn-radial').classList.add('active');
-    document.getElementById('btn-linear').setAttribute('aria-pressed','false');
-    document.getElementById('btn-linear').classList.remove('active');
-    document.getElementById('btn-angle').setAttribute('aria-pressed','false');
-    document.getElementById('btn-angle').classList.remove('active');
-    announce('Radial measure: click 3 points on any curve to calculate radius.');
-  } else if(mode==='angle'){
-    measureHint.style.background='rgba(94,53,177,0.92)';
-    measureHint.textContent='Click the vertex (corner point) of the angle';
-    document.getElementById('btn-angle').setAttribute('aria-pressed','true');
-    document.getElementById('btn-angle').classList.add('active');
-    document.getElementById('btn-linear').setAttribute('aria-pressed','false');
-    document.getElementById('btn-linear').classList.remove('active');
-    document.getElementById('btn-radial').setAttribute('aria-pressed','false');
-    document.getElementById('btn-radial').classList.remove('active');
-    announce('Angle measure: click vertex point, then two arm points.');
-  }
+  measureMode=mode;controls.enabled=false;measureHint.style.display='block';
+  btns.forEach(b=>{const active=b===mode;document.getElementById('btn-'+b).setAttribute('aria-pressed',String(active));document.getElementById('btn-'+b).classList.toggle('active',active);});
+  const hints={linear:'Click point 1 (snaps to vertices / centerlines)',radial:'Click point 1 of 3 on the curve',angle:'Click vertex point'};
+  const bgs={linear:'rgba(43,106,130,0.92)',radial:'rgba(196,114,26,0.92)',angle:'rgba(94,53,177,0.92)'};
+  measureHint.style.background=bgs[mode];measureHint.textContent=hints[mode];
+  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.'};
+  announce(msgs[mode]);
 }
 
-// ── Mouse move: vertex snap preview ────────────────────────────────────────
+// ── Mouse move ────────────────────────────────────────────────────────────────
 canvas.addEventListener('mousemove',e=>{
   if(!measureMode||!currentModel)return;
-  const{x,y}=getMouseXY(e);
-  // Snap priority: centerline intersection > circle center > vertex
-  const clSnap=findSnapCenterlineIntersect(x,y);
-  const ccSnap=!clSnap?findSnapCircleCenter(x,y):null;
-  const vertSnap=(!clSnap&&!ccSnap)?findSnapVertex(x,y):null;
-  const snap=clSnap||ccSnap||vertSnap;
-  const snapType=clSnap?'cl':ccSnap?'cc':'vert';
+  const{x,y}=getXY(e);
+  const snap=getBestSnap(x,y);
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   if(snap){
-    const col=snapType==='cl'?0x00BCD4:snapType==='cc'?0x00BCD4:0xC4721A;
-    snapSphere=makeSphere(snap,col,modelSize*0.018);
-    scene.add(snapSphere);
+    const col=snap.type==='vert'?0xC4721A:0x00BCD4;
+    snapSphere=makeSphere(snap.pt,col,modelSize*0.018);scene.add(snapSphere);
     snapIndicator.style.display='block';
-    snapIndicator.textContent=snapType==='cl'?'Snapped to centerline':'Snapped to '+(snapType==='cc'?'circle center':'vertex');
-    snapIndicator.style.background=snapType==='vert'?'#C4721A':'#00838F';
-  } else {
-    snapIndicator.style.display='none';
-  }
-  // Linear: preview line from pt1 to cursor
-  if(measureMode==='linear'&&linearPt1){
-    const hitPt=snap||getRayHit(e);
-    if(hitPt){
-      if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
-      linearPreview=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([linearPt1,hitPt]),
-        new THREE.LineBasicMaterial({color:0x2B6A82})
-      );
-      scene.add(linearPreview);
-    }
-  }
-  // Radial: preview circle through collected pts + cursor
-  if(measureMode==='radial'&&radialPts.length>=2){
-    const hitPt=snap||getRayHit(e);
-    if(hitPt){
-      if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
-      const pts=[...radialPts,hitPt];
-      const circ=circumscribedCircle(pts[0],pts[1],pts[2]||hitPt);
-      if(circ){
-        radialPreview=new THREE.Line(
-          makeCircleGeom(circ.center,circ.radius,circ.normal,96),
-          new THREE.LineBasicMaterial({color:0xC4721A})
-        );
-        scene.add(radialPreview);
-      }
-    }
-  }
-  // Angle: preview arc when vertex + arm1 set
-  if(measureMode==='angle'&&anglePts.length>=2){
-    const hitPt=snap||getRayHit(e);
-    if(hitPt){
-      angleMarkers.filter(m=>m.userData.isPreview).forEach(m=>scene.remove(m));
-      angleMarkers=angleMarkers.filter(m=>!m.userData.isPreview);
-      const arcGeo=makeAngleArc(anglePts[0],anglePts[1],hitPt,modelSize*0.18);
-      if(arcGeo){
-        const arcLine=new THREE.Line(arcGeo,new THREE.LineBasicMaterial({color:0x5E35B1}));
-        arcLine.userData.isPreview=true;
-        scene.add(arcLine);angleMarkers.push(arcLine);
-      }
-    }
-  }
-});
+    snapIndicator.textContent=snap.type==='cl'?'Snapped to centerline':snap.type==='cc'?'Snapped to circle center':'Snapped to vertex';
+    snapIndicator.style.background=snap.type==='vert'?'#C4721A':'#00838F';
+  }else{snapIndicator.style.display='none';}
 
-canvas.addEventListener('mouseleave',()=>{
-  if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
-  snapIndicator.style.display='none';
-});
-
-// ── Click: place measurement points ────────────────────────────────────────
-canvas.addEventListener('click',e=>{
-  if(!measureMode||!currentModel||e.button!==0)return;
-  const{x,y}=getMouseXY(e);
-  const clSnap=findSnapCenterlineIntersect(x,y);
-  const ccSnap=!clSnap?findSnapCircleCenter(x,y):null;
-  const snap=clSnap||ccSnap||findSnapVertex(x,y);
-  const hitPt=snap||getRayHit(e);
+  const hitPt=snap?snap.pt:getRayHit(e);
   if(!hitPt)return;
 
+  if(measureMode==='linear'&&linearPt1){
+    if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
+    linearPreview=new THREE.Line(new THREE.BufferGeometry().setFromPoints([linearPt1,hitPt]),new THREE.LineBasicMaterial({color:0x2B6A82}));
+    scene.add(linearPreview);
+  }
+  if(measureMode==='radial'&&radialPts.length>=2){
+    if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
+    const c=circumscribed(radialPts[0],radialPts[1],hitPt);
+    if(c){radialPreview=new THREE.Line(makeCircleGeom(c.center,c.radius,c.normal,96),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(radialPreview);}
+  }
+  if(measureMode==='angle'&&anglePts.length>=2){
+    angleMarkers.filter(m=>m.userData.preview).forEach(m=>scene.remove(m));
+    angleMarkers=angleMarkers.filter(m=>!m.userData.preview);
+    const arcR=Math.min(anglePts[0].distanceTo(anglePts[1]),anglePts[0].distanceTo(hitPt))*0.4;
+    const ag=makeAngleArc(anglePts[0],anglePts[1],hitPt,arcR);
+    if(ag){const al=new THREE.Line(ag,new THREE.LineBasicMaterial({color:0x5E35B1}));al.userData.preview=true;scene.add(al);angleMarkers.push(al);}
+  }
+});
+canvas.addEventListener('mouseleave',()=>{if(snapSphere){scene.remove(snapSphere);snapSphere=null;}snapIndicator.style.display='none';});
+
+// ── Click ─────────────────────────────────────────────────────────────────────
+canvas.addEventListener('click',e=>{
+  if(!measureMode||!currentModel||e.button!==0)return;
+  const{x,y}=getXY(e);
+  const snap=getBestSnap(x,y);
+  const hitPt=snap?snap.pt:getRayHit(e);
+  if(!hitPt)return;
+
+  // LINEAR
   if(measureMode==='linear'){
     if(!linearPt1){
-      // Place point 1
       linearPt1=hitPt.clone();
       if(linearMarker1){scene.remove(linearMarker1);}
-      linearMarker1=makeSphere(linearPt1,0x2B6A82);
-      scene.add(linearMarker1);
-      measureHint.textContent='Click point 2'+(snap?' (snapped)':'');
-      announce('Point 1 set. Click point 2.');
-    } else {
-      // Complete linear measurement
-      const pt2=hitPt.clone();
-      const dist=linearPt1.distanceTo(pt2);
+      linearMarker1=makeSphere(linearPt1,0x2B6A82);scene.add(linearMarker1);
+      measureHint.textContent='Click point 2';announce('Point 1 set.');
+    }else{
+      const dist=linearPt1.distanceTo(hitPt);
       if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
-      const sA=makeSphere(linearPt1,0x2B6A82);
-      const sB=makeSphere(pt2,0x2B6A82);
-      const line=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([linearPt1,pt2]),
-        new THREE.LineBasicMaterial({color:0x2B6A82})
-      );
-      scene.add(sA);scene.add(sB);scene.add(line);
       if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
-      measureCount++;
-      const id=measureCount;
-      addMeasureRow(id,'linear','Distance: '+dist.toFixed(4)+' units',[sA,sB,line]);
-      announce('Linear #'+id+': '+dist.toFixed(4)+' units.');
-      linearPt1=null;
-      measureHint.textContent='Click point 1 (snaps to vertices)';
+      const sA=makeSphere(linearPt1,0x2B6A82),sB=makeSphere(hitPt,0x2B6A82);
+      const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([linearPt1,hitPt]),new THREE.LineBasicMaterial({color:0x2B6A82}));
+      scene.add(sA);scene.add(sB);scene.add(line);
+      measureCount++;addRow(measureCount,'linear','Distance: '+dist.toFixed(4)+' units',[sA,sB,line]);
+      announce('Linear: '+dist.toFixed(4)+' units.');
+      linearPt1=null;measureHint.textContent='Click point 1';
     }
   }
 
+  // RADIAL
   if(measureMode==='radial'){
     radialPts.push(hitPt.clone());
-    const dot=makeSphere(hitPt,0xC4721A);
-    scene.add(dot);radialMarkers.push(dot);
-
-    if(radialPts.length===1){
-      measureHint.textContent='Click point 2 of 3 on the curve'+(snap?' (snapped)':'');
-      announce('Point 1 of 3 set.');
-    } else if(radialPts.length===2){
-      measureHint.textContent='Click point 3 of 3 on the curve'+(snap?' (snapped)':'');
-      announce('Point 2 of 3 set.');
-    } else if(radialPts.length===3){
-      // Complete 3-point radial measurement
+    const dot=makeSphere(hitPt,0xC4721A,modelSize*0.016);scene.add(dot);radialMarkers.push(dot);
+    if(radialPts.length===1){measureHint.textContent='Click point 2 of 3';announce('Point 1 of 3.');}
+    else if(radialPts.length===2){measureHint.textContent='Click point 3 of 3';announce('Point 2 of 3.');}
+    else if(radialPts.length===3){
       if(radialPreview){scene.remove(radialPreview);radialPreview=null;}
-      const circ=circumscribedCircle(radialPts[0],radialPts[1],radialPts[2]);
-      if(!circ){
-        announce('Points are collinear — cannot compute circle. Try again with different points.');
-        cancelMeasure();
-        measureHint.textContent='Click point 1 of 3 on the curve';
-        return;
-      }
-      const{center,radius,normal}=circ;
-      const diameter=radius*2;
-      const circumference=Math.PI*diameter;
-      const circLine=new THREE.Line(
-        makeCircleGeom(center,radius,normal,128),
-        new THREE.LineBasicMaterial({color:0xC4721A})
-      );
-      const centerDot=makeSphere(center,0xC4721A,modelSize*0.02);
-      // ── Crossing centerlines through circle center ──
+      const c=circumscribed(radialPts[0],radialPts[1],radialPts[2]);
+      if(!c){announce('Points are collinear. Try again.');cancelMeasure();measureHint.textContent='Click point 1 of 3';return;}
+      const{center,radius,normal,ax,ay}=c;
+      const diam=radius*2,circ=Math.PI*diam;
+      const circLine=new THREE.Line(makeCircleGeom(center,radius,normal,128),new THREE.LineBasicMaterial({color:0xC4721A}));
+      const centerDot=makeSphere(center,0xC4721A,modelSize*0.022);
+      // Crossing centerlines
       const clLen=radius*1.6;
-      // Build two perpendicular axes in the circle plane
-      const clAx1=new THREE.Vector3();
-      if(Math.abs(normal.x)<0.9) clAx1.set(1,0,0); else clAx1.set(0,1,0);
-      clAx1.crossVectors(clAx1,normal).normalize();
-      const clAx2=new THREE.Vector3().crossVectors(normal,clAx1).normalize();
-      const clDash={color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06};
-      // Horizontal centerline
-      const clH=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([
-          center.clone().addScaledVector(clAx1,-clLen),
-          center.clone().addScaledVector(clAx1, clLen)
-        ]), new THREE.LineDashedMaterial(clDash)
-      );
+      const clMat1=new THREE.LineDashedMaterial({color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06});
+      const clMat2=new THREE.LineDashedMaterial({color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06});
+      const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(ax,-clLen),center.clone().addScaledVector(ax,clLen)]),clMat1);
       clH.computeLineDistances();
-      // Vertical centerline
-      const clV=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([
-          center.clone().addScaledVector(clAx2,-clLen),
-          center.clone().addScaledVector(clAx2, clLen)
-        ]), new THREE.LineDashedMaterial(clDash)
-      );
+      const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(ay,-clLen),center.clone().addScaledVector(ay,clLen)]),clMat2);
       clV.computeLineDistances();
       scene.add(circLine);scene.add(centerDot);scene.add(clH);scene.add(clV);
+      // Store snap data
+      circleCenters.push(center.clone());
+      centerlineSegs.push({p1:center.clone().addScaledVector(ax,-clLen),p2:center.clone().addScaledVector(ax,clLen)});
+      centerlineSegs.push({p1:center.clone().addScaledVector(ay,-clLen),p2:center.clone().addScaledVector(ay,clLen)});
       const objs=[circLine,centerDot,clH,clV,...radialMarkers];
       radialMarkers=[];
       measureCount++;
-      const id=measureCount;
-      const text='r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4)+' units';
-      addMeasureRow(id,'radial',text,objs);circleCenters.push(center.clone());
-      // Store centerline segments for intersection snapping
-      centerlineSegs.push(
-        {p1:center.clone().addScaledVector(clAx1,-clLen), p2:center.clone().addScaledVector(clAx1,clLen), center:center.clone()},
-        {p1:center.clone().addScaledVector(clAx2,-clLen), p2:center.clone().addScaledVector(clAx2,clLen), center:center.clone()}
-      );
-      announce('Radial #'+id+': r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4));
-      radialPts=[];
-      measureHint.textContent='Click point 1 of 3 on the curve';
+      addRow(measureCount,'radial','r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4),[...objs]);
+      announce('Radial: r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4));
+      radialPts=[];measureHint.textContent='Click point 1 of 3';
     }
   }
 
-  // ── Angle: vertex → arm1 → arm2 ──────────────────────────────────────────
+  // ANGLE
   if(measureMode==='angle'){
     anglePts.push(hitPt.clone());
-    const dot=makeSphere(hitPt,0x5E35B1,modelSize*0.016);
-    scene.add(dot);angleMarkers.push(dot);
-    if(anglePts.length===1){
-      measureHint.textContent='Click first arm point';
-      announce('Vertex set. Click first arm point.');
-    } else if(anglePts.length===2){
-      const arm1Line=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[1]]),
-        new THREE.LineBasicMaterial({color:0x5E35B1})
-      );
-      scene.add(arm1Line);angleMarkers.push(arm1Line);
-      measureHint.textContent='Click second arm point';
-      announce('Arm 1 set. Click second arm point.');
-    } else if(anglePts.length===3){
-      // Clear previews
-      angleMarkers.filter(m=>m.userData.isPreview).forEach(m=>scene.remove(m));
-      angleMarkers=angleMarkers.filter(m=>!m.userData.isPreview);
+    const dot=makeSphere(hitPt,0x5E35B1,modelSize*0.016);scene.add(dot);angleMarkers.push(dot);
+    if(anglePts.length===1){measureHint.textContent='Click first arm point';announce('Vertex set.');}
+    else if(anglePts.length===2){
+      const arm1L=new THREE.Line(new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[1]]),new THREE.LineBasicMaterial({color:0x5E35B1}));
+      scene.add(arm1L);angleMarkers.push(arm1L);
+      measureHint.textContent='Click second arm point';announce('Arm 1 set.');
+    }else if(anglePts.length===3){
+      angleMarkers.filter(m=>m.userData.preview).forEach(m=>scene.remove(m));
+      angleMarkers=angleMarkers.filter(m=>!m.userData.preview);
       const angleDeg=computeAngle(anglePts[0],anglePts[1],anglePts[2]);
       const suppDeg=180-angleDeg;
-      const arcRadius=Math.min(
-        anglePts[0].distanceTo(anglePts[1]),
-        anglePts[0].distanceTo(anglePts[2])
-      )*0.4;
-      // Draw second arm line
-      const arm2Line=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[2]]),
-        new THREE.LineBasicMaterial({color:0x5E35B1})
-      );
-      scene.add(arm2Line);angleMarkers.push(arm2Line);
-      // Draw arc
-      const arcGeo=makeAngleArc(anglePts[0],anglePts[1],anglePts[2],arcRadius);
-      if(arcGeo){
-        const arcLine=new THREE.Line(arcGeo,new THREE.LineBasicMaterial({color:0x5E35B1}));
-        scene.add(arcLine);angleMarkers.push(arcLine);
-      }
-      // No in-model label — angle shown in measurements panel and status bar only
+      const arcR=Math.min(anglePts[0].distanceTo(anglePts[1]),anglePts[0].distanceTo(anglePts[2]))*0.4;
+      const arm2L=new THREE.Line(new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[2]]),new THREE.LineBasicMaterial({color:0x5E35B1}));
+      scene.add(arm2L);angleMarkers.push(arm2L);
+      const ag=makeAngleArc(anglePts[0],anglePts[1],anglePts[2],arcR);
+      if(ag){const al=new THREE.Line(ag,new THREE.LineBasicMaterial({color:0x5E35B1}));scene.add(al);angleMarkers.push(al);}
       measureCount++;
-      const id=measureCount;
-      const objs=[...angleMarkers];
-      angleMarkers=[];
-      const aText=angleDeg.toFixed(2)+'°  (supp: '+suppDeg.toFixed(2)+'°)';
-      addMeasureRow(id,'angle',aText,objs);
-      announce('Angle #'+id+': '+angleDeg.toFixed(2)+'° — supplementary: '+suppDeg.toFixed(2)+'°');
-      anglePts=[];
-      measureHint.textContent='Click the vertex (corner point) of the angle';
+      const objs=[...angleMarkers];angleMarkers=[];
+      addRow(measureCount,'angle',angleDeg.toFixed(2)+'°  (supp: '+suppDeg.toFixed(2)+'°)',objs);
+      announce('Angle: '+angleDeg.toFixed(2)+'° — supplementary: '+suppDeg.toFixed(2)+'°');
+      anglePts=[];measureHint.textContent='Click vertex point';
     }
   }
 });
 
-// ── D-pad & toolbar buttons ────────────────────────────────────────────────
-function doMove(dir){
-  const ps=modelSize*0.04;
-  const panMode=document.getElementById('btn-pan').classList.contains('active');
-  if(panMode){if(dir==='up')panBy(0,ps);else if(dir==='down')panBy(0,-ps);else if(dir==='left')panBy(-ps,0);else panBy(ps,0);}
-  else{if(dir==='up')rotateBy(0,-8);else if(dir==='down')rotateBy(0,8);else if(dir==='left')rotateBy(-8,0);else rotateBy(8,0);}
-}
+// ── Camera controls ───────────────────────────────────────────────────────────
+function zoomBy(f){const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();}
+function rotateBy(az,pol){const sph=new THREE.Spherical().setFromVector3(new THREE.Vector3().subVectors(camera.position,controls.target));sph.theta+=az*(Math.PI/180);sph.phi=Math.max(0.05,Math.min(Math.PI-0.05,sph.phi+pol*(Math.PI/180)));camera.position.setFromSpherical(sph).add(controls.target);controls.update();}
+function panBy(x,y){const v=new THREE.Vector3(x,y,0).applyQuaternion(camera.quaternion);camera.position.add(v);controls.target.add(v);controls.update();}
+function resetCam(){if(!defaultCamPos)return;animateTo(defaultCamPos,'Home');setTimeout(()=>{controls.target.copy(defaultTarget);controls.update();},0);}
+function toggleWire(){wireframeOn=!wireframeOn;document.getElementById('btn-wire').setAttribute('aria-pressed',String(wireframeOn));document.getElementById('btn-wire').classList.toggle('active',wireframeOn);if(currentModel)currentModel.traverse(c=>{if(c.isMesh)c.material.wireframe=wireframeOn;});announce('Wireframe '+(wireframeOn?'on':'off')+'.');}
+function toggleOrtho(){isOrtho=!isOrtho;document.getElementById('btn-ortho').setAttribute('aria-pressed',String(isOrtho));document.getElementById('btn-ortho').classList.toggle('active',isOrtho);if(isOrtho){syncOrtho();announce('Orthographic view.');}else{announce('Perspective view.');}}
+function doMove(dir){const ps=modelSize*0.04;const pan=document.getElementById('btn-pan').classList.contains('active');if(pan){if(dir==='up')panBy(0,ps);else if(dir==='down')panBy(0,-ps);else if(dir==='left')panBy(-ps,0);else panBy(ps,0);}else{if(dir==='up')rotateBy(0,-8);else if(dir==='down')rotateBy(0,8);else if(dir==='left')rotateBy(-8,0);else rotateBy(8,0);}}
+
+// ── Button wiring ─────────────────────────────────────────────────────────────
 document.getElementById('dp-up').addEventListener('click',()=>doMove('up'));
 document.getElementById('dp-down').addEventListener('click',()=>doMove('down'));
 document.getElementById('dp-left').addEventListener('click',()=>doMove('left'));
 document.getElementById('dp-right').addEventListener('click',()=>doMove('right'));
 document.getElementById('btn-zoom-in').addEventListener('click',()=>zoomBy(0.8));
 document.getElementById('btn-zoom-out').addEventListener('click',()=>zoomBy(1.25));
-document.getElementById('btn-fit').addEventListener('click',()=>{if(currentModel)fitCamera(currentModel);announce('Fit to screen.');});
-document.getElementById('btn-reset').addEventListener('click',resetCamera);
-document.getElementById('btn-wire').addEventListener('click',toggleWireframe);
+document.getElementById('btn-fit').addEventListener('click',()=>{if(currentModel)fitCamera(currentModel);announce('Fit.');});
+document.getElementById('btn-reset').addEventListener('click',resetCam);
+document.getElementById('btn-wire').addEventListener('click',toggleWire);
+document.getElementById('btn-ortho').addEventListener('click',toggleOrtho);
 document.getElementById('btn-front').addEventListener('click',()=>setView('front'));
 document.getElementById('btn-back').addEventListener('click',()=>setView('back'));
 document.getElementById('btn-right').addEventListener('click',()=>setView('right'));
 document.getElementById('btn-left').addEventListener('click',()=>setView('left'));
 document.getElementById('btn-top').addEventListener('click',()=>setView('top'));
 document.getElementById('btn-bottom').addEventListener('click',()=>setView('bottom'));
-// ── Orthographic toggle ────────────────────────────────────────────────────
-function toggleOrtho(){
-  isOrtho=!isOrtho;
-  const btn=document.getElementById('btn-ortho');
-  btn.setAttribute('aria-pressed',String(isOrtho));
-  btn.classList.toggle('active',isOrtho);
-  if(isOrtho){syncOrthoCamera();announce('Orthographic view — no perspective distortion.');}
-  else{announce('Perspective view.');}
-}
-document.getElementById('btn-ortho').addEventListener('click',toggleOrtho);
-
-// ── Isometric views ─────────────────────────────────────────────────────────
-// Isometric: camera at equal angles to X, Y, Z axes (30° elevation, 45° azimuth variants)
-function setIsoView(variant){
-  if(!currentModel){announce('Load a model first.');return;}
-  const d=camera.position.distanceTo(controls.target)||modelSize*2.5;
-  const t=controls.target.clone();
-  // Standard isometric angles: elevation = arctan(1/sqrt(2)) ≈ 35.264°
-  // Azimuth variants: FL=225°, FR=315°, BR=45°, BL=135°
-  const azimuths={fl:225,fr:315,br:45,bl:135};
-  const az=(azimuths[variant]||225)*(Math.PI/180);
-  const el=Math.atan(1/Math.sqrt(2)); // ~35.264°
-  const x=t.x+d*Math.cos(el)*Math.sin(az);
-  const y=t.y+d*Math.sin(el);
-  const z=t.z+d*Math.cos(el)*Math.cos(az);
-  const endPos=new THREE.Vector3(x,y,z);
-  const labels={fl:'ISO Front-Left',fr:'ISO Front-Right',br:'ISO Back-Right',bl:'ISO Back-Left'};
-  animateCameraTo(endPos,labels[variant]||'Isometric');
-}
-document.getElementById('btn-iso-fl').addEventListener('click',()=>setIsoView('fl'));
-document.getElementById('btn-iso-fr').addEventListener('click',()=>setIsoView('fr'));
-document.getElementById('btn-iso-br').addEventListener('click',()=>setIsoView('br'));
-
+document.getElementById('btn-iso1').addEventListener('click',()=>setIso(225));
+document.getElementById('btn-iso2').addEventListener('click',()=>setIso(315));
+document.getElementById('btn-iso3').addEventListener('click',()=>setIso(45));
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
-document.getElementById('btn-linear').addEventListener('click',()=>setMeasureMode('linear'));
-document.getElementById('btn-angle').addEventListener('click',()=>setMeasureMode('angle'));
-document.getElementById('btn-radial').addEventListener('click',()=>setMeasureMode('radial'));
-document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAllMeasurements();announce('All measurements cleared.');});
+document.getElementById('btn-linear').addEventListener('click',()=>setMode('linear'));
+document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
+document.getElementById('btn-angle').addEventListener('click',()=>setMode('angle'));
+document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAll();cancelMeasure();announce('Cleared.');});
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
 
-// ── Keyboard shortcuts ─────────────────────────────────────────────────────
+// ── Keyboard ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   const tag=document.activeElement&&document.activeElement.tagName;
   if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
   if(modal&&modal.style.display!=='none')return;
   const ps=modelSize*0.04;
   if(e.shiftKey){
-    if(e.key==='ArrowLeft')panBy(-ps,0);
-    else if(e.key==='ArrowRight')panBy(ps,0);
-    else if(e.key==='ArrowUp')panBy(0,ps);
-    else if(e.key==='ArrowDown')panBy(0,-ps);
-    else return;
-  } else {
-    if(e.key==='ArrowLeft')rotateBy(-8,0);
-    else if(e.key==='ArrowRight')rotateBy(8,0);
-    else if(e.key==='ArrowUp')rotateBy(0,-8);
-    else if(e.key==='ArrowDown')rotateBy(0,8);
-    else if(e.key==='+'||e.key===']')zoomBy(0.85);
-    else if(e.key==='-'||e.key==='[')zoomBy(1.18);
-    else if(e.key==='r'||e.key==='R')resetCamera();
-    else if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')setView('front');
-    else if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')setView('back');
-    else if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3')setView('right');
-    else if(e.key==='4'||e.code==='Digit4'||e.code==='Numpad4')setView('left');
-    else if(e.key==='5'||e.code==='Digit5'||e.code==='Numpad5')setView('top');
-    else if(e.key==='6'||e.code==='Digit6'||e.code==='Numpad6')setView('bottom');
-    else if(e.key==='o'||e.key==='O')toggleOrtho();else if(e.key==='w'||e.key==='W')toggleWireframe();
-    else if(e.key==='l'||e.key==='L')setMeasureMode('linear');
-    else if(e.key==='c'||e.key==='C')setMeasureMode('radial');else if(e.key==='a'||e.key==='A')setMeasureMode('angle');
+    if(e.key==='ArrowLeft')panBy(-ps,0);else if(e.key==='ArrowRight')panBy(ps,0);else if(e.key==='ArrowUp')panBy(0,ps);else if(e.key==='ArrowDown')panBy(0,-ps);else return;
+  }else{
+    if(e.key==='ArrowLeft')rotateBy(-8,0);else if(e.key==='ArrowRight')rotateBy(8,0);else if(e.key==='ArrowUp')rotateBy(0,-8);else if(e.key==='ArrowDown')rotateBy(0,8);
+    else if(e.key==='+'||e.key===']')zoomBy(0.85);else if(e.key==='-'||e.key==='[')zoomBy(1.18);
+    else if(e.key==='r'||e.key==='R')resetCam();
+    else if(e.key==='o'||e.key==='O')toggleOrtho();
+    else if(e.key==='w'||e.key==='W')toggleWire();
+    else if(e.key==='l'||e.key==='L')setMode('linear');
+    else if(e.key==='c'||e.key==='C')setMode('radial');
+    else if(e.key==='a'||e.key==='A')setMode('angle');
+    else if(e.key==='1'||e.code==='Digit1')setView('front');else if(e.key==='2'||e.code==='Digit2')setView('back');
+    else if(e.key==='3'||e.code==='Digit3')setView('right');else if(e.key==='4'||e.code==='Digit4')setView('left');
+    else if(e.key==='5'||e.code==='Digit5')setView('top');else if(e.key==='6'||e.code==='Digit6')setView('bottom');
     else if(e.key==='Escape'){cancelMeasure();if(measureMode)announce('Cancelled.');}
     else return;
   }
