@@ -56,6 +56,12 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 .mbadge-linear{background:#E6F2F6;color:var(--avc-steel);}
 .mbadge-radial{background:var(--avc-orange-bg);color:var(--avc-orange);}
 .mbadge-angle{background:#EDE7F6;color:#5E35B1;}
+.mbadge-hdim{background:#E8F5E9;color:#2E7D32;}
+.mbadge-vdim{background:#E8F5E9;color:#2E7D32;}
+.mbadge-hdim{background:#E8F5E9;color:#2E7D32;}
+.mbadge-vdim{background:#E8F5E9;color:#2E7D32;}
+.mbadge-hdim{background:#E8F5E9;color:#2E7D32;}
+.mbadge-vdim{background:#FFF8E1;color:#F57F17;}
 #code-modal{position:absolute;inset:0;background:rgba(10,14,25,0.88);display:none;align-items:center;justify-content:center;z-index:100;}
 #code-box{background:white;border:1px solid #CBD5DC;border-radius:10px;padding:24px 26px;width:300px;display:flex;flex-direction:column;gap:14px;}
 #code-box h2{font-size:15px;font-weight:500;color:var(--avc-burgundy);margin:0;display:flex;align-items:center;gap:8px;}
@@ -105,6 +111,10 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
     <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — 3 points on curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
     <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
+    <button class="tb-btn" id="btn-hdim" aria-pressed="false" aria-label="Horizontal dimension — 2 points, measures X distance"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H-Dim</button>
+    <button class="tb-btn" id="btn-vdim" aria-pressed="false" aria-label="Vertical dimension — 2 points, measures Y distance"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V-Dim</button>
+    <button class="tb-btn" id="btn-hdim" aria-pressed="false" aria-label="Horizontal dimension — 2 points, measures X distance"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H-Dim</button>
+    <button class="tb-btn" id="btn-vdim" aria-pressed="false" aria-label="Vertical dimension — 2 points, measures Y distance"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V-Dim</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i>Wireframe</button>
     <button class="tb-btn" id="btn-reset" aria-label="Reset camera"><i class="ti ti-refresh" style="font-size:14px;" aria-hidden="true"></i>Reset</button>
@@ -121,7 +131,10 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div class="kbd-row"><span>Views</span><span><kbd>1</kbd>–<kbd>6</kbd></span></div>
     <div class="kbd-row"><span>Reset / Ortho</span><span><kbd>R</kbd> / <kbd>O</kbd></span></div>
     <div class="kbd-row"><span>Linear / Radial / Angle</span><span><kbd>L</kbd> / <kbd>C</kbd> / <kbd>A</kbd></span></div>
+    <div class="kbd-row"><span>H-Dim / V-Dim</span><span><kbd>H</kbd> / <kbd>V</kbd></span></div>
+    <div class="kbd-row"><span>H-Dim / V-Dim</span><span><kbd>H</kbd> / <kbd>V</kbd></span></div>
     <div class="kbd-row"><span>Wireframe / Cancel</span><span><kbd>W</kbd> / <kbd>Esc</kbd></span></div>
+    <div class="kbd-row"><span>H-Dim / V-Dim</span><span><kbd>H</kbd> / <kbd>V</kbd></span></div>
   </div>
 
   <div class="ctrl-panel" role="group" aria-label="On-screen navigation controls">
@@ -336,6 +349,10 @@ let linearPt1=null,linearMarker1=null,linearPreview=null;
 let radialPts=[],radialMarkers=[],radialPreview=null;
 let anglePts=[],angleMarkers=[];
 let circleCenters=[],centerlineSegs=[];
+let dimPt1=null,dimMarker1=null,dimPreview=null;
+let hvPt1=null,hvMarker1=null,hvPreview=null; // shared state for H-Dim and V-Dim
+let hDimPt1=null,hDimMarker1=null;
+let vDimPt1=null,vDimMarker1=null;
 let rightDragActive=false,rightDragStart={x:0,y:0},rightDragCamStart=null;
 
 function syncOrtho(){
@@ -532,6 +549,63 @@ function makeCircleGeom(center,radius,normal,segs){
   return new THREE.BufferGeometry().setFromPoints(pts);
 }
 
+// ── Horizontal / Vertical dimension drawing ──────────────────────────────────
+function makeDimLine(p1, p2, axis, color) {
+  // axis: 'h' = horizontal (X only), 'v' = vertical (Y only)
+  // Returns array of scene objects: [mainLine, ext1, ext2, tick1, tick2]
+  const objs = [];
+  const mat = new THREE.LineBasicMaterial({color});
+
+  // The two dimension points projected onto the chosen axis
+  const dimP1 = p1.clone();
+  const dimP2 = p2.clone();
+  if(axis === 'h'){
+    // Lock Y and Z to midpoint — measure only X difference
+    const midY = (p1.y + p2.y) / 2;
+    const midZ = (p1.z + p2.z) / 2;
+    dimP1.y = midY; dimP1.z = midZ;
+    dimP2.y = midY; dimP2.z = midZ;
+  } else {
+    // Lock X and Z to midpoint — measure only Y difference
+    const midX = (p1.x + p2.x) / 2;
+    const midZ = (p1.z + p2.z) / 2;
+    dimP1.x = midX; dimP1.z = midZ;
+    dimP2.x = midX; dimP2.z = midZ;
+  }
+
+  // Main dimension line
+  const main = new THREE.Line(new THREE.BufferGeometry().setFromPoints([dimP1, dimP2]), mat);
+  scene.add(main); objs.push(main);
+
+  // Extension lines from original points to dimension line
+  const ext1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1.clone(), dimP1.clone()]),
+    new THREE.LineBasicMaterial({color, transparent:true, opacity:0.6}));
+  const ext2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p2.clone(), dimP2.clone()]),
+    new THREE.LineBasicMaterial({color, transparent:true, opacity:0.6}));
+  scene.add(ext1); scene.add(ext2); objs.push(ext1, ext2);
+
+  // Tick marks (small perpendicular lines at each end)
+  const tickLen = modelSize * 0.04;
+  // Perpendicular to dimension line in screen-ish sense
+  const perpDir = axis === 'h'
+    ? new THREE.Vector3(0, 1, 0)
+    : new THREE.Vector3(1, 0, 0);
+  const t1a = dimP1.clone().addScaledVector(perpDir, tickLen);
+  const t1b = dimP1.clone().addScaledVector(perpDir, -tickLen);
+  const t2a = dimP2.clone().addScaledVector(perpDir, tickLen);
+  const t2b = dimP2.clone().addScaledVector(perpDir, -tickLen);
+  const tick1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([t1a, t1b]), mat);
+  const tick2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([t2a, t2b]), mat);
+  scene.add(tick1); scene.add(tick2); objs.push(tick1, tick2);
+
+  // Center dot markers at each dim point
+  const d1 = makeSphere(dimP1, color, modelSize * 0.014);
+  const d2 = makeSphere(dimP2, color, modelSize * 0.014);
+  scene.add(d1); scene.add(d2); objs.push(d1, d2);
+
+  return {objs, dimP1, dimP2};
+}
+
 // ── 3-point circumscribed circle ─────────────────────────────────────────────
 function circumscribed(p1,p2,p3){
   const v1=new THREE.Vector3().subVectors(p2,p1);
@@ -585,6 +659,8 @@ function cancelMeasure(){
   radialPts=[];
   angleMarkers.forEach(m=>scene.remove(m));angleMarkers=[];
   anglePts=[];
+  if(hDimMarker1){scene.remove(hDimMarker1);hDimMarker1=null;}hDimPt1=null;
+  if(vDimMarker1){scene.remove(vDimMarker1);vDimMarker1=null;}vDimPt1=null;
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   snapIndicator.style.display='none';
 }
@@ -613,9 +689,95 @@ function addRow(id,type,text,objs){
   row.appendChild(del);document.getElementById('measure-list').appendChild(row);
 }
 
+// ── Horizontal / Vertical dimension drawing ──────────────────────────────────
+function makeHVDimension(pt1, pt2, axis, color){
+  // axis: 'h' = measure horizontal (X) distance, 'v' = measure vertical (Y) distance
+  // Projects both points to the relevant axis and draws:
+  //   - extension lines from each point to the dim line
+  //   - a horizontal or vertical dim line with arrows
+  //   - returns array of scene objects
+  const objs=[];
+  const mat=new THREE.LineBasicMaterial({color});
+
+  let p1proj, p2proj, dist;
+  if(axis==='h'){
+    // Horizontal: measure X distance, draw at the lower Y of the two points
+    const dimY=Math.min(pt1.y, pt2.y) - modelSize*0.08;
+    const dimZ=(pt1.z+pt2.z)/2;
+    p1proj=new THREE.Vector3(pt1.x, dimY, dimZ);
+    p2proj=new THREE.Vector3(pt2.x, dimY, dimZ);
+    dist=Math.abs(pt2.x - pt1.x);
+    // Extension lines
+    const ext1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(pt1.x, pt1.y, dimZ),
+      new THREE.Vector3(pt1.x, dimY - modelSize*0.02, dimZ)
+    ]), mat); scene.add(ext1); objs.push(ext1);
+    const ext2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(pt2.x, pt2.y, dimZ),
+      new THREE.Vector3(pt2.x, dimY - modelSize*0.02, dimZ)
+    ]), mat); scene.add(ext2); objs.push(ext2);
+  } else {
+    // Vertical: measure Y distance, draw at the left X of the two points
+    const dimX=Math.min(pt1.x, pt2.x) - modelSize*0.08;
+    const dimZ=(pt1.z+pt2.z)/2;
+    p1proj=new THREE.Vector3(dimX, pt1.y, dimZ);
+    p2proj=new THREE.Vector3(dimX, pt2.y, dimZ);
+    dist=Math.abs(pt2.y - pt1.y);
+    // Extension lines
+    const ext1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(pt1.x, pt1.y, dimZ),
+      new THREE.Vector3(dimX - modelSize*0.02, pt1.y, dimZ)
+    ]), mat); scene.add(ext1); objs.push(ext1);
+    const ext2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(pt2.x, pt2.y, dimZ),
+      new THREE.Vector3(dimX - modelSize*0.02, pt2.y, dimZ)
+    ]), mat); scene.add(ext2); objs.push(ext2);
+  }
+
+  // Main dimension line
+  const dimLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1proj, p2proj]), mat);
+  scene.add(dimLine); objs.push(dimLine);
+
+  // Tick marks at each end (small perpendicular lines)
+  const tickLen=modelSize*0.04;
+  const tickDir=axis==='h'?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+  const tick1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    p1proj.clone().addScaledVector(tickDir,-tickLen),
+    p1proj.clone().addScaledVector(tickDir, tickLen)
+  ]), mat); scene.add(tick1); objs.push(tick1);
+  const tick2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    p2proj.clone().addScaledVector(tickDir,-tickLen),
+    p2proj.clone().addScaledVector(tickDir, tickLen)
+  ]), mat); scene.add(tick2); objs.push(tick2);
+
+  // Label sprite at midpoint of dim line
+  const mid=new THREE.Vector3().addVectors(p1proj, p2proj).multiplyScalar(0.5);
+  const cv=document.createElement('canvas');
+  cv.width=256; cv.height=56;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='rgba(46,125,50,0.92)';
+  ctx.beginPath();
+  const rr=10,rx=4,ry=4,rw=248,rh=48;
+  ctx.moveTo(rx+rr,ry);ctx.lineTo(rx+rw-rr,ry);ctx.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);
+  ctx.lineTo(rx+rw,ry+rh-rr);ctx.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);
+  ctx.lineTo(rx+rr,ry+rh);ctx.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);
+  ctx.lineTo(rx,ry+rr);ctx.arcTo(rx,ry,rx+rr,ry,rr);ctx.closePath();ctx.fill();
+  ctx.fillStyle='white'; ctx.font='bold 26px system-ui';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText((axis==='h'?'H: ':'V: ')+dist.toFixed(4),128,28);
+  const tex=new THREE.CanvasTexture(cv);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false}));
+  sprite.position.copy(mid);
+  const sc=modelSize*0.45;
+  sprite.scale.set(sc,sc*56/256,1);
+  scene.add(sprite); objs.push(sprite);
+
+  return{objs, dist};
+}
+
 function setMode(mode){
   cancelMeasure();
-  const btns=['linear','radial','angle'];
+  const btns=['linear','radial','angle','hdim','vdim'];
   if(measureMode===mode){
     measureMode=null;controls.enabled=true;measureHint.style.display='none';
     btns.forEach(b=>{document.getElementById('btn-'+b).setAttribute('aria-pressed','false');document.getElementById('btn-'+b).classList.remove('active');});
@@ -623,10 +785,10 @@ function setMode(mode){
   }
   measureMode=mode;controls.enabled=false;measureHint.style.display='block';
   btns.forEach(b=>{const active=b===mode;document.getElementById('btn-'+b).setAttribute('aria-pressed',String(active));document.getElementById('btn-'+b).classList.toggle('active',active);});
-  const hints={linear:'Click point 1 (snaps to vertices / centerlines)',radial:'Click point 1 of 3 on the curve',angle:'Click vertex point'};
-  const bgs={linear:'rgba(43,106,130,0.92)',radial:'rgba(196,114,26,0.92)',angle:'rgba(94,53,177,0.92)'};
+  const hints={linear:'Click point 1 (snaps to vertices / centerlines)',radial:'Click point 1 of 3 on the curve',angle:'Click vertex point',hdim:'Click point 1 — snaps to circle centers, vertices, corners',vdim:'Click point 1 — snaps to circle centers, vertices, corners'};
+  const bgs={linear:'rgba(43,106,130,0.92)',radial:'rgba(196,114,26,0.92)',angle:'rgba(94,53,177,0.92)',hdim:'rgba(46,125,50,0.92)',vdim:'rgba(245,127,23,0.92)'};
   measureHint.style.background=bgs[mode];measureHint.textContent=hints[mode];
-  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.'};
+  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.',hdim:'H-Dim: click 2 points — measures horizontal (X) distance only.',vdim:'V-Dim: click 2 points — measures vertical (Y) distance only.'};
   announce(msgs[mode]);
 }
 
@@ -657,12 +819,56 @@ canvas.addEventListener('mousemove',e=>{
     const c=circumscribed(radialPts[0],radialPts[1],hitPt);
     if(c){radialPreview=new THREE.Line(makeCircleGeom(c.center,c.radius,c.normal,96),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(radialPreview);}
   }
+  // H/V DIM preview
+  if((measureMode==='hdim'||measureMode==='vdim')&&dimPt1){
+    if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
+    const hitPt2=snap?snap.pt:getRayHit(e);
+    if(hitPt2){
+      // Project both points to axis
+      const p1=dimPt1.clone();
+      const p2=hitPt2.clone();
+      let ext1,ext2,dim;
+      if(measureMode==='hdim'){
+        // Horizontal: same Y and Z as respective points, X differs
+        ext1=new THREE.Vector3(p2.x,p1.y,p1.z);
+        ext2=new THREE.Vector3(p2.x,p2.y,p2.z);
+        dim=Math.abs(p2.x-p1.x);
+      }else{
+        // Vertical: same X and Z as respective points, Y differs
+        ext1=new THREE.Vector3(p1.x,p2.y,p1.z);
+        ext2=new THREE.Vector3(p2.x,p2.y,p2.z);
+        dim=Math.abs(p2.y-p1.y);
+      }
+      // Draw dimension line + extension lines
+      const offset=modelSize*0.04;
+      const dir=measureMode==='hdim'?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+      const geo=new THREE.BufferGeometry().setFromPoints([
+        p1,p1.clone().addScaledVector(dir,offset),
+        ext1.clone().addScaledVector(dir,offset),ext1,
+        ext1.clone().addScaledVector(dir,offset),ext2.clone().addScaledVector(dir,offset),
+        p2,p2.clone().addScaledVector(dir,offset),ext2.clone().addScaledVector(dir,offset),ext2
+      ]);
+      dimPreview=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x2E7D32}));
+      scene.add(dimPreview);
+    }
+  }
+
   if(measureMode==='angle'&&anglePts.length>=2){
     angleMarkers.filter(m=>m.userData.preview).forEach(m=>scene.remove(m));
     angleMarkers=angleMarkers.filter(m=>!m.userData.preview);
     const arcR=Math.min(anglePts[0].distanceTo(anglePts[1]),anglePts[0].distanceTo(hitPt))*0.4;
     const ag=makeAngleArc(anglePts[0],anglePts[1],hitPt,arcR);
     if(ag){const al=new THREE.Line(ag,new THREE.LineBasicMaterial({color:0x5E35B1}));al.userData.preview=true;scene.add(al);angleMarkers.push(al);}
+  }
+  // H/V dim preview line
+  if((measureMode==='hdim'||measureMode==='vdim')&&hvPt1){
+    if(hvPreview){scene.remove(hvPreview);hvPreview=null;}
+    const axis=measureMode==='hdim'?'h':'v';
+    const pts=axis==='h'
+      ?[new THREE.Vector3(hvPt1.x,hvPt1.y,hvPt1.z),new THREE.Vector3(hitPt.x,hvPt1.y,hvPt1.z)]
+      :[new THREE.Vector3(hvPt1.x,hvPt1.y,hvPt1.z),new THREE.Vector3(hvPt1.x,hitPt.y,hvPt1.z)];
+    hvPreview=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x2E7D32}));
+    scene.add(hvPreview);
   }
 });
 canvas.addEventListener('mouseleave',()=>{if(snapSphere){scene.remove(snapSphere);snapSphere=null;}snapIndicator.style.display='none';});
@@ -737,6 +943,103 @@ canvas.addEventListener('click',e=>{
     }
   }
 
+  // H-DIM
+  if(measureMode==='hdim'){
+    if(!hDimPt1){
+      hDimPt1=hitPt.clone();
+      if(hDimMarker1){scene.remove(hDimMarker1);}
+      hDimMarker1=makeSphere(hDimPt1,0x2E7D32);scene.add(hDimMarker1);
+      measureHint.textContent='Click point 2 (snaps to circle centers, corners)';
+      announce('H-Dim point 1 set. Click point 2.');
+    }else{
+      const dx=Math.abs(hitPt.x-hDimPt1.x);
+      if(hDimMarker1){scene.remove(hDimMarker1);hDimMarker1=null;}
+      const{objs}=makeDimLine(hDimPt1,hitPt,'h',0x2E7D32);
+      measureCount++;
+      addRow(measureCount,'hdim','Horizontal: '+dx.toFixed(4)+' units',objs);
+      announce('H-Dim: '+dx.toFixed(4)+' units (horizontal X distance).');
+      hDimPt1=null;measureHint.textContent='Click point 1';
+    }
+  }
+
+  // V-DIM
+  if(measureMode==='vdim'){
+    if(!vDimPt1){
+      vDimPt1=hitPt.clone();
+      if(vDimMarker1){scene.remove(vDimMarker1);}
+      vDimMarker1=makeSphere(vDimPt1,0xF57F17);scene.add(vDimMarker1);
+      measureHint.textContent='Click point 2 (snaps to circle centers, corners)';
+      announce('V-Dim point 1 set. Click point 2.');
+    }else{
+      const dy=Math.abs(hitPt.y-vDimPt1.y);
+      if(vDimMarker1){scene.remove(vDimMarker1);vDimMarker1=null;}
+      const{objs}=makeDimLine(vDimPt1,hitPt,'v',0xF57F17);
+      measureCount++;
+      addRow(measureCount,'vdim','Vertical: '+dy.toFixed(4)+' units',objs);
+      announce('V-Dim: '+dy.toFixed(4)+' units (vertical Y distance).');
+      vDimPt1=null;measureHint.textContent='Click point 1';
+    }
+  }
+
+  // H-DIM / V-DIM
+  if(measureMode==='hdim'||measureMode==='vdim'){
+    const isH=measureMode==='hdim';
+    if(!dimPt1){
+      dimPt1=hitPt.clone();
+      if(dimMarker1){scene.remove(dimMarker1);}
+      dimMarker1=makeSphere(dimPt1,0x2E7D32);scene.add(dimMarker1);
+      measureHint.textContent='Click point 2'+(snap&&snap.type!=='vert'?' ('+snap.type+')':'');
+      announce('Point 1 set. Click point 2.');
+    }else{
+      const p1=dimPt1.clone();
+      const p2=hitPt.clone();
+      const dimVal=Math.abs(isH?p2.x-p1.x:p2.y-p1.y);
+      if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
+      if(dimMarker1){scene.remove(dimMarker1);dimMarker1=null;}
+
+      // Extension line offset direction
+      const offset=modelSize*0.06;
+      const perpDir=isH?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+
+      // Project measurement line endpoints
+      const measStart=isH?new THREE.Vector3(p1.x,p1.y,p1.z):new THREE.Vector3(p1.x,p1.y,p1.z);
+      const measEnd=isH?new THREE.Vector3(p2.x,p1.y,p1.z):new THREE.Vector3(p1.x,p2.y,p1.z);
+
+      // Extension lines from each point to the measurement line
+      const ext1start=p1.clone();
+      const ext1end=measStart.clone().addScaledVector(perpDir,offset);
+      const ext2start=p2.clone();
+      const ext2end=measEnd.clone().addScaledVector(perpDir,offset);
+
+      // Main dimension line (with arrows via endpoint dots)
+      const dimLineStart=measStart.clone().addScaledVector(perpDir,offset);
+      const dimLineEnd=measEnd.clone().addScaledVector(perpDir,offset);
+
+      // Arrow markers at each end of dim line
+      const arrow1=makeSphere(dimLineStart,0x2E7D32,modelSize*0.012);
+      const arrow2=makeSphere(dimLineEnd,0x2E7D32,modelSize*0.012);
+
+      const mat=new THREE.LineBasicMaterial({color:0x2E7D32});
+      const ext1Line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([ext1start,ext1end]),mat);
+      const ext2Line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([ext2start,ext2end]),mat);
+      const dimLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([dimLineStart,dimLineEnd]),mat);
+
+      // Point markers
+      const sA=makeSphere(p1,0x2E7D32,modelSize*0.014);
+      const sB=makeSphere(p2,0x2E7D32,modelSize*0.014);
+
+      scene.add(ext1Line);scene.add(ext2Line);scene.add(dimLine);
+      scene.add(arrow1);scene.add(arrow2);scene.add(sA);scene.add(sB);
+
+      measureCount++;
+      const label=(isH?'H':'V')+'-Dim: '+dimVal.toFixed(4)+' units';
+      addRow(measureCount,isH?'hdim':'vdim',label,[ext1Line,ext2Line,dimLine,arrow1,arrow2,sA,sB]);
+      announce(label+' ('+( isH?'horizontal X':'vertical Y')+' distance)');
+      dimPt1=null;
+      measureHint.textContent='Click point 1';
+    }
+  }
+
   // ANGLE
   if(measureMode==='angle'){
     anglePts.push(hitPt.clone());
@@ -761,6 +1064,30 @@ canvas.addEventListener('click',e=>{
       addRow(measureCount,'angle',angleDeg.toFixed(2)+'°  (supp: '+suppDeg.toFixed(2)+'°)',objs);
       announce('Angle: '+angleDeg.toFixed(2)+'° — supplementary: '+suppDeg.toFixed(2)+'°');
       anglePts=[];measureHint.textContent='Click vertex point';
+    }
+  }
+
+  // H-DIM / V-DIM
+  if(measureMode==='hdim'||measureMode==='vdim'){
+    const axis=measureMode==='hdim'?'h':'v';
+    const color=0x2E7D32;
+    if(!hvPt1){
+      hvPt1=hitPt.clone();
+      if(hvMarker1){scene.remove(hvMarker1);}
+      hvMarker1=makeSphere(hvPt1,color,modelSize*0.016);scene.add(hvMarker1);
+      const hint=axis==='h'?'Click point 2 — measures horizontal (X) distance':'Click point 2 — measures vertical (Y) distance';
+      measureHint.textContent=hint;
+      announce('Point 1 set'+(snap&&snap.type==='cc'?' (circle center)':snap&&snap.type==='cl'?' (centerline)':'')+'. Click point 2.');
+    } else {
+      if(hvPreview){scene.remove(hvPreview);hvPreview=null;}
+      if(hvMarker1){scene.remove(hvMarker1);hvMarker1=null;}
+      const result=makeHVDimension(hvPt1,hitPt,axis,color);
+      const label=(axis==='h'?'H':'V')+'-Dist: '+result.dist.toFixed(4)+' units';
+      measureCount++;
+      addRow(measureCount,axis==='h'?'hdim':'vdim',label,result.objs);
+      announce((axis==='h'?'Horizontal':'Vertical')+' distance: '+result.dist.toFixed(4)+' units.');
+      hvPt1=null;
+      measureHint.textContent='Click point 1 — circle center or corner';
     }
   }
 });
@@ -797,8 +1124,14 @@ document.getElementById('btn-iso3').addEventListener('click',()=>setIso(45));
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-linear').addEventListener('click',()=>setMode('linear'));
+document.getElementById('btn-hdim').addEventListener('click',()=>setMode('hdim'));
+document.getElementById('btn-vdim').addEventListener('click',()=>setMode('vdim'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
 document.getElementById('btn-angle').addEventListener('click',()=>setMode('angle'));
+document.getElementById('btn-hdim').addEventListener('click',()=>setMode('hdim'));
+document.getElementById('btn-vdim').addEventListener('click',()=>setMode('vdim'));
+document.getElementById('btn-hdim').addEventListener('click',()=>setMode('hdim'));
+document.getElementById('btn-vdim').addEventListener('click',()=>setMode('vdim'));
 document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAll();cancelMeasure();announce('Cleared.');});
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
 
@@ -819,6 +1152,10 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='l'||e.key==='L')setMode('linear');
     else if(e.key==='c'||e.key==='C')setMode('radial');
     else if(e.key==='a'||e.key==='A')setMode('angle');
+    else if(e.key==='h'||e.key==='H')setMode('hdim');
+    else if(e.key==='v'||e.key==='V')setMode('vdim');else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
+    else if(e.key==='h'||e.key==='H')setMode('hdim');
+    else if(e.key==='v'||e.key==='V')setMode('vdim');
     else if(e.key==='1'||e.code==='Digit1')setView('front');else if(e.key==='2'||e.code==='Digit2')setView('back');
     else if(e.key==='3'||e.code==='Digit3')setView('right');else if(e.key==='4'||e.code==='Digit4')setView('left');
     else if(e.key==='5'||e.code==='Digit5')setView('top');else if(e.key==='6'||e.code==='Digit6')setView('bottom');
