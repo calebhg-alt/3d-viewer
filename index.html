@@ -398,24 +398,7 @@ const VIEW_MAP={'front':['Front',v=>v.clone().add(new THREE.Vector3(0,0,1))],'ba
 function setView(key){if(!currentModel){announce('Load a model first.');return;}const[label,dirFn]=VIEW_MAP[key];const d=camera.position.distanceTo(controls.target)||modelSize*2.5,t=controls.target.clone();animateCameraTo(dirFn(t).sub(t).normalize().multiplyScalar(d).add(t),label);}
 function extractVertices(obj){vertexPositions=[];obj.traverse(child=>{if(!child.isMesh)return;const pos=child.geometry.attributes.position;if(!pos)return;const mat=child.matrixWorld;for(let i=0;i<pos.count;i++)vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));});}
 function makeMat(){return new THREE.MeshStandardMaterial({color:0x9BBFD4,roughness:0.45,metalness:0.15,side:THREE.DoubleSide});}
-function makeEdgeMat(){return new THREE.LineBasicMaterial({color:0x1A3A4A,linewidth:1});}
-
-function addEdgeLines(obj){
-  // Add dark edge lines to all meshes for better silhouette definition
-  obj.traverse(child=>{
-    if(!child.isMesh) return;
-    try{
-      const edges=new THREE.EdgesGeometry(child.geometry,15); // 15deg threshold
-      const line=new THREE.LineSegments(edges,makeEdgeMat());
-      line.userData.isEdgeLine=true;
-      // Match the mesh's world transform
-      line.position.copy(child.position);
-      line.rotation.copy(child.rotation);
-      line.scale.copy(child.scale);
-      child.parent.add(line);
-    }catch(e){console.warn('Edge line error:',e);}
-  });
-}
+// Edge lines removed for stability
 function loadModelFromURL(url,label){
   const ext=url.split('?')[0].split('.').pop().toLowerCase();
   document.getElementById('loading-indicator').style.display='flex';
@@ -425,15 +408,10 @@ function loadModelFromURL(url,label){
   cancelMeasure();clearAllMeasurements();
   if(currentModel){scene.remove(currentModel);currentModel=null;}
   const done=(obj)=>{
-    try{
-      currentModel=obj;
-      scene.add(currentModel);
-      fitCamera(currentModel);
-      setTimeout(()=>{
-        extractVertices(currentModel);
-        try{addEdgeLines(currentModel);}catch(e){console.warn('Edge lines skipped:',e);}
-      },150);
-    }catch(e){console.error('Model setup error:',e);}
+    currentModel=obj;
+    scene.add(currentModel);
+    fitCamera(currentModel);
+    setTimeout(()=>extractVertices(currentModel),150);
     document.getElementById('loading-indicator').style.display='none';
     document.getElementById('model-status').textContent='✓ Loaded';
     announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');
