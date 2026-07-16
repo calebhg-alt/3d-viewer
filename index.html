@@ -787,7 +787,7 @@ function setMode(mode){
   const hints={linear:'Click point 1 (snaps to vertices / centerlines)',radial:'Click point 1 of 3 on the curve',angle:'Click vertex point',hdim:'Click point 1 — snaps to circle centers, vertices, corners',vdim:'Click point 1 — snaps to circle centers, vertices, corners'};
   const bgs={linear:'rgba(43,106,130,0.92)',radial:'rgba(196,114,26,0.92)',angle:'rgba(94,53,177,0.92)',hdim:'rgba(46,125,50,0.92)',vdim:'rgba(245,127,23,0.92)'};
   measureHint.style.background=bgs[mode];measureHint.textContent=hints[mode];
-  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.',hdim:'H-Dim: click 2 points — measures horizontal (X) distance only.',vdim:'V-Dim: click 2 points — measures vertical (Y) distance only.'};
+  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.',hdim:'H-Dim: click start then snap point — measures screen-horizontal distance from any view.',vdim:'V-Dim: click start then snap point — measures screen-vertical distance from any view.'};
   announce(msgs[mode]);
 }
 
@@ -818,22 +818,26 @@ canvas.addEventListener('mousemove',e=>{
     const c=circumscribed(radialPts[0],radialPts[1],hitPt);
     if(c){radialPreview=new THREE.Line(makeCircleGeom(c.center,c.radius,c.normal,96),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(radialPreview);}
   }
-  // H/V DIM preview — locked to one axis, terminates at snap point's position
+  // H/V DIM preview — screen-space locked, works from any view
   if((measureMode==='hdim'||measureMode==='vdim')&&dimPt1){
     if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
     const hitPt2=snap?snap.pt:getRayHit(e);
     if(hitPt2){
       const p1=dimPt1.clone();
       const p2=hitPt2.clone();
-      // H-Dim: lock to world Y level of p1, travel only in X to p2.x
-      // V-Dim: lock to world X/Z of p1, travel only in Y to p2.y
-      const lineEnd=measureMode==='hdim'
-        ? new THREE.Vector3(p2.x, p1.y, p1.z)   // same Y,Z as start; X from snap
-        : new THREE.Vector3(p1.x, p2.y, p1.z);  // same X,Z as start; Y from snap
+      // Get screen-space axis vectors from camera
+      const camRight=new THREE.Vector3();
+      const camUp=new THREE.Vector3();
+      camera.matrix.extractBasis(camRight,camUp,new THREE.Vector3());
+      camRight.normalize(); camUp.normalize();
+      // Project p1->p2 onto the chosen screen axis
+      const diff=new THREE.Vector3().subVectors(p2,p1);
+      const axis=measureMode==='hdim'?camRight:camUp;
+      const proj=diff.dot(axis);
+      const lineEnd=p1.clone().addScaledVector(axis,proj);
       const geo=new THREE.BufferGeometry().setFromPoints([p1,lineEnd]);
       dimPreview=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x2E7D32}));
       scene.add(dimPreview);
-      // Show live snap point marker
       if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
       snapSphere=makeSphere(p2,snap?0x00BCD4:0xC4721A,modelSize*0.018);
       scene.add(snapSphere);
@@ -968,9 +972,7 @@ canvas.addEventListener('click',e=>{
     }
   }
 
-  // H-DIM / V-DIM
-  // H-Dim: line stays at p1's Y level, travels in X to snap point's X
-  // V-Dim: line stays at p1's X level, travels in Y to snap point's Y
+  // H-DIM / V-DIM — screen-space locked axis, works from any view angle
   if(measureMode==='hdim'||measureMode==='vdim'){
     const isH=measureMode==='hdim';
     if(!dimPt1){
@@ -978,60 +980,65 @@ canvas.addEventListener('click',e=>{
       if(dimMarker1){scene.remove(dimMarker1);}
       dimMarker1=makeSphere(dimPt1,0x2E7D32,modelSize*0.018);scene.add(dimMarker1);
       measureHint.textContent=isH
-        ? 'Move to snap point — line travels horizontally (X) from start'
-        : 'Move to snap point — line travels vertically (Y) from start';
-      announce('Start point set. Move to snap point and click.');
+        ? 'Click snap point — line locks to screen horizontal'
+        : 'Click snap point — line locks to screen vertical';
+      announce('Start point set. Click snap point to complete '+(isH?'horizontal':'vertical')+' dimension.');
     }else{
       const p1=dimPt1.clone();
-      const p2=hitPt.clone(); // snap point — only its X (H) or Y (V) is used
+      const p2=hitPt.clone();
       if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
       if(dimMarker1){scene.remove(dimMarker1);dimMarker1=null;}
 
-      // Line end: locked to p1's plane, only the measured axis changes
-      const lineEnd=isH
-        ? new THREE.Vector3(p2.x, p1.y, p1.z)   // X from snap, Y/Z locked to start
-        : new THREE.Vector3(p1.x, p2.y, p1.z);  // Y from snap, X/Z locked to start
+      // Screen-space axis from camera
+      const camRight=new THREE.Vector3();
+      const camUp=new THREE.Vector3();
+      camera.matrix.extractBasis(camRight,camUp,new THREE.Vector3());
+      camRight.normalize();camUp.normalize();
 
-      const dimVal=isH ? Math.abs(p2.x-p1.x) : Math.abs(p2.y-p1.y);
+      // Project p2-p1 onto chosen screen axis
+      const diff=new THREE.Vector3().subVectors(p2,p1);
+      const axis=isH?camRight:camUp;
+      const proj=diff.dot(axis);
+      const dimVal=Math.abs(proj);
+      const lineEnd=p1.clone().addScaledVector(axis,proj);
 
-      // Draw the locked dimension line
       const mat=new THREE.LineBasicMaterial({color:0x2E7D32});
+
+      // Main dimension line (locked to screen axis)
       const dimLine=new THREE.Line(
         new THREE.BufferGeometry().setFromPoints([p1,lineEnd]),mat
       );
 
-      // Small tick marks at each end (perpendicular to dim direction)
-      const tickDir=isH?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+      // Perpendicular tick marks at each end
+      const tickAxis=isH?camUp:camRight;
       const tickLen=modelSize*0.04;
-      const tick1Geo=new THREE.BufferGeometry().setFromPoints([
-        p1.clone().addScaledVector(tickDir,-tickLen),
-        p1.clone().addScaledVector(tickDir, tickLen)
-      ]);
-      const tick2Geo=new THREE.BufferGeometry().setFromPoints([
-        lineEnd.clone().addScaledVector(tickDir,-tickLen),
-        lineEnd.clone().addScaledVector(tickDir, tickLen)
-      ]);
-      const tick1=new THREE.Line(tick1Geo,mat);
-      const tick2=new THREE.Line(tick2Geo,mat);
+      const tick1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        p1.clone().addScaledVector(tickAxis,-tickLen),
+        p1.clone().addScaledVector(tickAxis, tickLen)
+      ]),mat);
+      const tick2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        lineEnd.clone().addScaledVector(tickAxis,-tickLen),
+        lineEnd.clone().addScaledVector(tickAxis, tickLen)
+      ]),mat);
 
-      // Dashed reference line from snap point to lineEnd (shows where snap was)
+      // Dashed guide line from snap point to lineEnd
       const refMat=new THREE.LineDashedMaterial({color:0x2E7D32,dashSize:modelSize*0.03,gapSize:modelSize*0.015});
       const refLine=new THREE.Line(
         new THREE.BufferGeometry().setFromPoints([p2,lineEnd]),refMat
       );
       refLine.computeLineDistances();
 
-      // Endpoint markers
       const sA=makeSphere(p1,0x2E7D32,modelSize*0.014);
       const sB=makeSphere(lineEnd,0x2E7D32,modelSize*0.014);
+      const sSnap=makeSphere(p2,0x00BCD4,modelSize*0.012);
 
       scene.add(dimLine);scene.add(tick1);scene.add(tick2);
-      scene.add(refLine);scene.add(sA);scene.add(sB);
+      scene.add(refLine);scene.add(sA);scene.add(sB);scene.add(sSnap);
 
       measureCount++;
       const label=(isH?'H':'V')+'-Dim: '+dimVal.toFixed(4)+' units';
-      addRow(measureCount,isH?'hdim':'vdim',label,[dimLine,tick1,tick2,refLine,sA,sB]);
-      announce(label+' ('+(isH?'horizontal X':'vertical Y')+' distance from start to snap)');
+      addRow(measureCount,isH?'hdim':'vdim',label,[dimLine,tick1,tick2,refLine,sA,sB,sSnap]);
+      announce(label+' (screen-'+(isH?'horizontal':'vertical')+' distance)');
       dimPt1=null;
       measureHint.textContent='Click start point — snaps to circle centers, centerlines & vertices';
     }
