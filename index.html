@@ -367,7 +367,9 @@ let radialPts=[],radialMarkers=[],radialPreview=null;
 // Angle state: click vertex (pt1), then two arm points (pt2, pt3)
 let anglePts=[],angleMarkers=[];
 // Stored circle centers from radial measurements (for snap)
-let circleCenters=[];
+let circleCenters=[];centerlineSegs=[];
+// Stored centerline segments [{p1,p2},...] for intersection snap
+let centerlineSegs=[];
 let snapSphere=null;
 
 function resize(){
@@ -544,6 +546,40 @@ function findSnapCircleCenter(mx,my,threshold=22){
   return best;
 }
 
+// Snap to centerline/geometry intersection
+// Projects mouse ray onto each centerline segment and checks distance
+function findSnapCenterlineIntersect(mx,my,threshold=20){
+  if(!centerlineSegs.length||!currentModel) return null;
+  // Get mouse ray in world space
+  const rect=canvas.getBoundingClientRect();
+  const mouseNDC=new THREE.Vector2(
+    ((mx+rect.left-rect.left)/rect.width)*2-1,
+    -((my+rect.top-rect.top)/rect.height)*2+1
+  );
+  // Actually use screen-space: find points on centerline segments
+  // that are close to the mouse cursor in screen space
+  let best=null, bestDist=Infinity;
+  centerlineSegs.forEach(seg=>{
+    // Sample points along the segment and find closest to mouse in screen space
+    const steps=32;
+    for(let i=0;i<=steps;i++){
+      const t=i/steps;
+      const pt=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,t);
+      const sc=toScreen(pt);
+      const d=Math.hypot(sc.x-mx,sc.y-my);
+      if(d<threshold&&d<bestDist){
+        bestDist=d;
+        best=pt.clone();
+      }
+    }
+    // Also snap to center point itself
+    const sc=toScreen(seg.center);
+    const d=Math.hypot(sc.x-mx,sc.y-my);
+    if(d<threshold&&d<bestDist){bestDist=d;best=seg.center.clone();}
+  });
+  return best;
+}
+
 // ── Measurement state management ───────────────────────────────────────────
 function cancelMeasure(){
   if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
@@ -563,7 +599,7 @@ function clearAllMeasurements(){
   measureObjects=measureObjects.filter(o=>o.type!=='measurement');
   document.getElementById('measure-list').innerHTML='';
   document.getElementById('measure-panel').style.display='none';
-  circleCenters=[];
+  circleCenters=[];centerlineSegs=[];
 }
 
 function addMeasureRow(id,type,text,objs){
@@ -638,17 +674,20 @@ function setMeasureMode(mode){
 canvas.addEventListener('mousemove',e=>{
   if(!measureMode||!currentModel)return;
   const{x,y}=getMouseXY(e);
-  // Circle center snap takes priority over vertex snap
-  const ccSnap=findSnapCircleCenter(x,y);
-  const snap=ccSnap||findSnapVertex(x,y);
-  const isCC=!!ccSnap;
+  // Snap priority: centerline intersection > circle center > vertex
+  const clSnap=findSnapCenterlineIntersect(x,y);
+  const ccSnap=!clSnap?findSnapCircleCenter(x,y):null;
+  const vertSnap=(!clSnap&&!ccSnap)?findSnapVertex(x,y):null;
+  const snap=clSnap||ccSnap||vertSnap;
+  const snapType=clSnap?'cl':ccSnap?'cc':'vert';
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   if(snap){
-    snapSphere=makeSphere(snap,isCC?0x00BCD4:0xC4721A,modelSize*0.018);
+    const col=snapType==='cl'?0x00BCD4:snapType==='cc'?0x00BCD4:0xC4721A;
+    snapSphere=makeSphere(snap,col,modelSize*0.018);
     scene.add(snapSphere);
     snapIndicator.style.display='block';
-    snapIndicator.textContent=isCC?'Snapped to circle center':'Snapped to vertex';
-    snapIndicator.style.background=isCC?'#00838F':'#C4721A';
+    snapIndicator.textContent=snapType==='cl'?'Snapped to centerline':'Snapped to '+(snapType==='cc'?'circle center':'vertex');
+    snapIndicator.style.background=snapType==='vert'?'#C4721A':'#00838F';
   } else {
     snapIndicator.style.display='none';
   }
@@ -705,7 +744,9 @@ canvas.addEventListener('mouseleave',()=>{
 canvas.addEventListener('click',e=>{
   if(!measureMode||!currentModel||e.button!==0)return;
   const{x,y}=getMouseXY(e);
-  const snap=findSnapVertex(x,y);
+  const clSnap=findSnapCenterlineIntersect(x,y);
+  const ccSnap=!clSnap?findSnapCircleCenter(x,y):null;
+  const snap=clSnap||ccSnap||findSnapVertex(x,y);
   const hitPt=snap||getRayHit(e);
   if(!hitPt)return;
 
@@ -769,13 +810,42 @@ canvas.addEventListener('click',e=>{
         new THREE.LineBasicMaterial({color:0xC4721A})
       );
       const centerDot=makeSphere(center,0xC4721A,modelSize*0.02);
-      scene.add(circLine);scene.add(centerDot);
-      const objs=[circLine,centerDot,...radialMarkers];
+      // ── Crossing centerlines through circle center ──
+      const clLen=radius*1.6;
+      // Build two perpendicular axes in the circle plane
+      const clAx1=new THREE.Vector3();
+      if(Math.abs(normal.x)<0.9) clAx1.set(1,0,0); else clAx1.set(0,1,0);
+      clAx1.crossVectors(clAx1,normal).normalize();
+      const clAx2=new THREE.Vector3().crossVectors(normal,clAx1).normalize();
+      const clMat=new THREE.LineDashedMaterial({color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06});
+      // Horizontal centerline
+      const clH=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          center.clone().addScaledVector(clAx1,-clLen),
+          center.clone().addScaledVector(clAx1, clLen)
+        ]), clMat
+      );
+      clH.computeLineDistances();
+      // Vertical centerline
+      const clV=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          center.clone().addScaledVector(clAx2,-clLen),
+          center.clone().addScaledVector(clAx2, clLen)
+        ]), clMat.clone()
+      );
+      clV.computeLineDistances();
+      scene.add(circLine);scene.add(centerDot);scene.add(clH);scene.add(clV);
+      const objs=[circLine,centerDot,clH,clV,...radialMarkers];
       radialMarkers=[];
       measureCount++;
       const id=measureCount;
       const text='r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4)+' units';
       addMeasureRow(id,'radial',text,objs);circleCenters.push(center.clone());
+      // Store centerline segments for intersection snapping
+      centerlineSegs.push(
+        {p1:center.clone().addScaledVector(clAx1,-clLen), p2:center.clone().addScaledVector(clAx1,clLen), center:center.clone()},
+        {p1:center.clone().addScaledVector(clAx2,-clLen), p2:center.clone().addScaledVector(clAx2,clLen), center:center.clone()}
+      );
       announce('Radial #'+id+': r='+radius.toFixed(4)+' d='+diameter.toFixed(4)+' c='+circumference.toFixed(4));
       radialPts=[];
       measureHint.textContent='Click point 1 of 3 on the curve';
@@ -820,9 +890,7 @@ canvas.addEventListener('click',e=>{
         const arcLine=new THREE.Line(arcGeo,new THREE.LineBasicMaterial({color:0x5E35B1}));
         scene.add(arcLine);angleMarkers.push(arcLine);
       }
-      // Draw label sprite
-      const label=makeAngleLabel(anglePts[0],anglePts[1],anglePts[2],angleDeg,arcRadius);
-      scene.add(label);angleMarkers.push(label);
+      // No in-model label — angle shown in measurements panel and status bar only
       measureCount++;
       const id=measureCount;
       const objs=[...angleMarkers];
