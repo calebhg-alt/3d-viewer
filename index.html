@@ -424,7 +424,20 @@ function loadModelFromURL(url,label){
   announce('Loading '+label+'…');
   cancelMeasure();clearAllMeasurements();
   if(currentModel){scene.remove(currentModel);currentModel=null;}
-  const done=(obj)=>{currentModel=obj;scene.add(currentModel);fitCamera(currentModel);setTimeout(()=>{extractVertices(currentModel);addEdgeLines(currentModel);},150);document.getElementById('loading-indicator').style.display='none';document.getElementById('model-status').textContent='✓ Loaded';announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');};
+  const done=(obj)=>{
+    try{
+      currentModel=obj;
+      scene.add(currentModel);
+      fitCamera(currentModel);
+      setTimeout(()=>{
+        extractVertices(currentModel);
+        try{addEdgeLines(currentModel);}catch(e){console.warn('Edge lines skipped:',e);}
+      },150);
+    }catch(e){console.error('Model setup error:',e);}
+    document.getElementById('loading-indicator').style.display='none';
+    document.getElementById('model-status').textContent='✓ Loaded';
+    announce('Loaded: '+label+'. Linear: click 2 points. Radial: click 3 points on any curve.');
+  };
   const fail=()=>{document.getElementById('loading-indicator').style.display='none';document.getElementById('drop-overlay').style.display='flex';document.getElementById('model-status').textContent='⚠ Not found';sel.value='';announce('Could not load '+label+'. Check file exists at: '+url);};
   if(ext==='stl'){fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();}).then(buf=>{const geo=parseSTL(buf);const m=new THREE.Mesh(geo,makeMat());const g=new THREE.Group();g.add(m);done(g);}).catch(e=>{console.error(e);fail();});}
   else if(ext==='glb'||ext==='gltf'){new THREE.GLTFLoader().load(url,g=>done(g.scene),undefined,fail);}
@@ -817,13 +830,13 @@ canvas.addEventListener('click',e=>{
       if(Math.abs(normal.x)<0.9) clAx1.set(1,0,0); else clAx1.set(0,1,0);
       clAx1.crossVectors(clAx1,normal).normalize();
       const clAx2=new THREE.Vector3().crossVectors(normal,clAx1).normalize();
-      const clMat=new THREE.LineDashedMaterial({color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06});
+      const clDash={color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06};
       // Horizontal centerline
       const clH=new THREE.Line(
         new THREE.BufferGeometry().setFromPoints([
           center.clone().addScaledVector(clAx1,-clLen),
           center.clone().addScaledVector(clAx1, clLen)
-        ]), clMat
+        ]), new THREE.LineDashedMaterial(clDash)
       );
       clH.computeLineDistances();
       // Vertical centerline
@@ -831,7 +844,7 @@ canvas.addEventListener('click',e=>{
         new THREE.BufferGeometry().setFromPoints([
           center.clone().addScaledVector(clAx2,-clLen),
           center.clone().addScaledVector(clAx2, clLen)
-        ]), clMat.clone()
+        ]), new THREE.LineDashedMaterial(clDash)
       );
       clV.computeLineDistances();
       scene.add(circLine);scene.add(centerDot);scene.add(clH);scene.add(clV);
