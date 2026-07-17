@@ -203,6 +203,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     </div>
     <div style="position:absolute;bottom:8px;right:10px;font-size:11px;color:rgba(255,255,255,0.22);pointer-events:none;" aria-hidden="true">scroll=zoom · right-drag=rotate</div>
     <div style="position:absolute;bottom:8px;left:10px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
+    <canvas id="axis-canvas" width="90" height="90" style="position:absolute;bottom:40px;left:10px;pointer-events:none;" aria-hidden="true"></canvas>
   </div>
 
   <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin.</div>
@@ -375,7 +376,68 @@ function resize(){
 }
 resize();new ResizeObserver(resize).observe(viewport);
 
-(function loop(){requestAnimationFrame(loop);controls.update();if(isOrtho)syncOrtho();renderer.render(scene,isOrtho?orthoCamera:camera);})();
+// ── XYZ Axis Indicator ────────────────────────────────────────────────────
+const axisCanvas=document.getElementById('axis-canvas');
+const axisCtx=axisCanvas.getContext('2d');
+const axisScene=new THREE.Scene();
+const axisCamera2=new THREE.PerspectiveCamera(50,1,0.1,100);
+axisCamera2.position.set(0,0,3);
+const axisRenderer=new THREE.WebGLRenderer({canvas:axisCanvas,antialias:true,alpha:true});
+axisRenderer.setPixelRatio(window.devicePixelRatio);
+axisRenderer.setSize(90,90);
+axisRenderer.setClearColor(0x000000,0);
+
+// Build XYZ axis lines manually for full control
+function makeAxisLine(dir,color){
+  const mat=new THREE.LineBasicMaterial({color,linewidth:3});
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(0.8)]);
+  return new THREE.Line(geo,mat);
+}
+const axX=makeAxisLine(new THREE.Vector3(1,0,0),0xFF3333); // X = red
+const axY=makeAxisLine(new THREE.Vector3(0,1,0),0x33FF33); // Y = green
+const axZ=makeAxisLine(new THREE.Vector3(0,0,1),0x3399FF); // Z = blue
+axisScene.add(axX);axisScene.add(axY);axisScene.add(axZ);
+
+// Cone arrowheads
+function makeArrowHead(dir,color){
+  const geo=new THREE.ConeGeometry(0.06,0.2,8);
+  const mat=new THREE.MeshBasicMaterial({color});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.copy(dir.clone().multiplyScalar(0.9));
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+  return mesh;
+}
+axisScene.add(makeArrowHead(new THREE.Vector3(1,0,0),0xFF3333));
+axisScene.add(makeArrowHead(new THREE.Vector3(0,1,0),0x33FF33));
+axisScene.add(makeArrowHead(new THREE.Vector3(0,0,1),0x3399FF));
+
+// Labels rendered on the 2D canvas overlay after Three renders
+function drawAxisLabels(){
+  axisCtx.clearRect(0,0,90,90);
+  // Project each axis tip to screen space
+  const tips=[
+    {pos:new THREE.Vector3(1.1,0,0),label:'X',color:'#FF5555'},
+    {pos:new THREE.Vector3(0,1.1,0),label:'Y',color:'#55FF55'},
+    {pos:new THREE.Vector3(0,0,1.1),label:'Z',color:'#55AAFF'},
+  ];
+  tips.forEach(({pos,label,color})=>{
+    const v=pos.clone().project(axisCamera2);
+    const x=(v.x+1)/2*90;
+    const y=(-v.y+1)/2*90;
+    axisCtx.font='bold 13px system-ui';
+    axisCtx.fillStyle=color;
+    axisCtx.textAlign='center';
+    axisCtx.textBaseline='middle';
+    axisCtx.fillText(label,x,y);
+  });
+}
+
+(function loop(){requestAnimationFrame(loop);controls.update();if(isOrtho)syncOrtho();renderer.render(scene,isOrtho?orthoCamera:camera);
+  // Sync axis indicator rotation to main camera
+  axisCamera2.quaternion.copy(camera.quaternion);
+  axisRenderer.render(axisScene,axisCamera2);
+  drawAxisLabels();
+})();
 
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
 canvas.addEventListener('mousedown',e=>{if(e.button!==2)return;e.preventDefault();rightDragActive=true;rightDragStart={x:e.clientX,y:e.clientY};rightDragCamStart=camera.position.clone();});
@@ -1002,12 +1064,12 @@ canvas.addEventListener('click',e=>{
       clH.computeLineDistances();
       const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx2,-clLen),center.clone().addScaledVector(clAx2,clLen)]),clMat2);
       clV.computeLineDistances();
-      scene.add(circLine);scene.add(centerDot);scene.add(clH);scene.add(clV);
+      scene.add(circLine);scene.add(centerDot);scene.add(clH);scene.add(clV);scene.add(clDot);
       // Store snap data
       circleCenters.push(center.clone());
-      centerlineSegs.push({p1:center.clone().addScaledVector(clAx1,-clLen),p2:center.clone().addScaledVector(clAx1,clLen)});
-      centerlineSegs.push({p1:center.clone().addScaledVector(clAx2,-clLen),p2:center.clone().addScaledVector(clAx2,clLen)});
-      const objs=[circLine,centerDot,clH,clV,...radialMarkers];
+      centerlineSegs.push({p1:center.clone().addScaledVector(clAx1,-clLen2),p2:center.clone().addScaledVector(clAx1,clLen2)});
+      centerlineSegs.push({p1:center.clone().addScaledVector(clAx2,-clLen2),p2:center.clone().addScaledVector(clAx2,clLen2)});
+      const objs=[circLine,centerDot,clH,clV,clDot,...radialMarkers];
       radialMarkers=[];
       measureCount++;
       addRow(measureCount,'radial','r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4),[...objs]);
