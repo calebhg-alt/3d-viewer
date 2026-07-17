@@ -1158,34 +1158,66 @@ canvas.addEventListener('click',e=>{
       const clEnd1b=center.clone().addScaledVector(clAx1, clLen);
       const clEnd2a=center.clone().addScaledVector(clAx2,-clLen);
       const clEnd2b=center.clone().addScaledVector(clAx2, clLen);
-      // Black background lines for contrast
-      const clBgMat=new THREE.LineBasicMaterial({color:0x111111});
-      const clHbg=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd1a,clEnd1b]),clBgMat);
-      const clVbg=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd2a,clEnd2b]),clBgMat);
-      // Deep red dashed centerlines on top
+      // True engineering centerline: long-gap-short-gap pattern
+      // THREE.js LineDashedMaterial only supports one dash/gap size
+      // so we build the centerline geometry manually with correct proportions
       const clColor=0xCC0000;
-      const clMat1=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.25,gapSize:radius*0.04});
-      const clMat2=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.25,gapSize:radius*0.04});
-      const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd1a,clEnd1b]),clMat1);
-      clH.computeLineDistances();
-      const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd2a,clEnd2b]),clMat2);
-      clV.computeLineDistances();
-      // Tick marks at each endpoint
-      const epMat=new THREE.LineBasicMaterial({color:clColor});
-      const epSz=modelSize*0.025;
-      function mkEP(pt,ax){return new THREE.Line(new THREE.BufferGeometry().setFromPoints([pt.clone().addScaledVector(ax,-epSz),pt.clone().addScaledVector(ax,epSz)]),epMat);}
-      const ep1=mkEP(clEnd1a,clAx2);const ep2=mkEP(clEnd1b,clAx2);
-      const ep3=mkEP(clEnd2a,clAx1);const ep4=mkEP(clEnd2b,clAx1);
+      const clMat=new THREE.LineBasicMaterial({color:clColor});
+      const clBgMat=new THREE.LineBasicMaterial({color:0x111111});
+
+      // Build a centerline as alternating segments: long, gap, short, gap
+      function makeCenterlineGeom(ptA,ptB){
+        const total=ptA.distanceTo(ptB);
+        const longD=radius*0.55;   // long dash
+        const shortD=radius*0.12;  // short dash (center tick)
+        const gapD=radius*0.10;    // gap between dashes
+        const pattern=[longD,gapD,shortD,gapD]; // repeating unit
+        const unitLen=pattern.reduce((s,v)=>s+v,0);
+        const pts=[];
+        const dir=new THREE.Vector3().subVectors(ptB,ptA).normalize();
+        let t=0;
+        let seg=0;
+        while(t<total){
+          const pLen=pattern[seg%pattern.length];
+          const isDrawn=(seg%2===0); // even = dash, odd = gap
+          const end=Math.min(t+pLen,total);
+          if(isDrawn){
+            pts.push(ptA.clone().addScaledVector(dir,t));
+            pts.push(ptA.clone().addScaledVector(dir,end));
+          }
+          t=end;seg++;
+        }
+        // Build geometry from line segments (pairs of points)
+        const geo=new THREE.BufferGeometry();
+        const positions=[];
+        for(let i=0;i<pts.length;i+=2){
+          if(i+1<pts.length){
+            positions.push(pts[i].x,pts[i].y,pts[i].z);
+            positions.push(pts[i+1].x,pts[i+1].y,pts[i+1].z);
+          }
+        }
+        geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(positions),3));
+        return geo;
+      }
+
+      const clHgeo=makeCenterlineGeom(clEnd1a,clEnd1b);
+      const clVgeo=makeCenterlineGeom(clEnd2a,clEnd2b);
+      // Background solid black lines for shadow/contrast
+      const clHbg=new THREE.LineSegments(new THREE.BufferGeometry().copy(clHgeo),clBgMat);
+      const clVbg=new THREE.LineSegments(new THREE.BufferGeometry().copy(clVgeo),clBgMat);
+      // Red centerlines on top
+      const clH=new THREE.LineSegments(clHgeo,clMat);
+      const clV=new THREE.LineSegments(clVgeo,clMat);
+
       // Add all to scene
       scene.add(circLine);scene.add(centerDot);
       scene.add(clHbg);scene.add(clVbg);
       scene.add(clH);scene.add(clV);
-      scene.add(ep1);scene.add(ep2);scene.add(ep3);scene.add(ep4);
       // Store snap data
       circleCenters.push(center.clone());
       centerlineSegs.push({p1:clEnd1a.clone(),p2:clEnd1b.clone(),endpoints:[clEnd1a.clone(),clEnd1b.clone()]});
       centerlineSegs.push({p1:clEnd2a.clone(),p2:clEnd2b.clone(),endpoints:[clEnd2a.clone(),clEnd2b.clone()]});
-      const objs=[circLine,centerDot,clHbg,clVbg,clH,clV,ep1,ep2,ep3,ep4,...radialMarkers];
+      const objs=[circLine,centerDot,clHbg,clVbg,clH,clV,...radialMarkers];
       radialMarkers=[];
       measureCount++;
       addRow(measureCount,'radial','r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4),[...objs]);
