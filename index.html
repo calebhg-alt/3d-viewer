@@ -82,10 +82,48 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 #instructor-submit{background:var(--avc-burgundy);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;}
 #instructor-submit:hover{background:#4A1A26;}
 .watermark{padding:4px 14px;font-size:11px;color:#aaa;background:white;font-style:italic;border-top:1px solid #f0f0f0;}
+#startup-gate{position:fixed;inset:0;z-index:9999;background:var(--avc-burgundy);display:flex;align-items:center;justify-content:center;}
+#startup-box{background:white;border-radius:12px;padding:36px 40px;width:340px;display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:0 8px 40px rgba(0,0,0,0.4);}
+#startup-mark{display:flex;gap:5px;align-items:stretch;height:36px;margin-bottom:4px;}
+.sm-bar{width:10px;border-radius:3px;}
+.sm-bar-1{background:#F5A623;}.sm-bar-2{background:#9FC8D6;}.sm-bar-3{background:#C06080;width:7px;}
+#startup-college{display:flex;flex-direction:column;line-height:1.2;}
+#startup-college span:first-child{font-size:16px;font-weight:600;color:var(--avc-burgundy);letter-spacing:0.07em;}
+#startup-college span:last-child{font-size:11px;color:#888;letter-spacing:0.14em;}
+#startup-title{font-size:14px;font-weight:500;color:#5F5E5A;text-align:center;}
+#startup-input{font-size:22px;padding:10px 14px;border:2px solid #CBD5DC;border-radius:8px;background:white;color:#1A1A1A;letter-spacing:0.25em;text-align:center;width:100%;}
+#startup-input:focus{outline:3px solid #185FA5;outline-offset:2px;border-color:var(--avc-burgundy);}
+#startup-error{font-size:12px;color:#A32D2D;display:none;text-align:center;font-weight:500;}
+#startup-submit{background:var(--avc-burgundy);color:white;border:none;border-radius:8px;padding:12px 0;font-size:14px;font-weight:600;cursor:pointer;width:100%;letter-spacing:0.04em;}
+#startup-submit:hover{background:#4A1A26;}
+#startup-submit:focus-visible{outline:3px solid #185FA5;outline-offset:2px;}
+#startup-hint{font-size:11px;color:#aaa;text-align:center;}
 </style>
 </head>
 <body>
 <h1 class="sr-only">Antelope Valley College 3D Model Viewer</h1>
+<div id="startup-gate" role="dialog" aria-modal="true" aria-labelledby="startup-title">
+  <div id="startup-box">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div id="startup-mark" aria-hidden="true">
+        <div class="sm-bar sm-bar-1"></div>
+        <div class="sm-bar sm-bar-2"></div>
+        <div class="sm-bar sm-bar-3"></div>
+      </div>
+      <div id="startup-college">
+        <span>ANTELOPE VALLEY</span>
+        <span>COLLEGE</span>
+      </div>
+    </div>
+    <div id="startup-title" style="font-size:15px;font-weight:500;color:var(--avc-burgundy);">3D Model Viewer</div>
+    <p style="font-size:13px;color:#5F5E5A;margin:0;text-align:center;line-height:1.5;">Enter your access code to continue.</p>
+    <input type="password" id="startup-input" placeholder="••••" aria-label="Startup access code" autocomplete="off" maxlength="10" inputmode="numeric">
+    <div id="startup-error" role="alert">Incorrect code — please try again.</div>
+    <button id="startup-submit">Enter Viewer</button>
+    <div id="startup-hint">Contact your instructor for access.</div>
+  </div>
+</div>
+
 <div class="app-shell">
   <div class="app-header" role="banner">
     <div class="header-mark" aria-hidden="true">
@@ -251,6 +289,35 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 (function(){
+
+// ── Startup access gate ───────────────────────────────────────────────────
+const STARTUP_CODE='7018';
+(function(){
+  const gate=document.getElementById('startup-gate');
+  const input=document.getElementById('startup-input');
+  const error=document.getElementById('startup-error');
+  const submit=document.getElementById('startup-submit');
+  // Check session — don't re-prompt if already unlocked this session
+  if(sessionStorage.getItem('avc_viewer_auth')==='1'){
+    gate.style.display='none';return;
+  }
+  setTimeout(()=>input.focus(),100);
+  function tryUnlock(){
+    if(input.value.trim()===STARTUP_CODE){
+      sessionStorage.setItem('avc_viewer_auth','1');
+      gate.style.display='none';
+    } else {
+      error.style.display='block';
+      input.value='';
+      input.style.borderColor='#A32D2D';
+      setTimeout(()=>{input.style.borderColor='';input.focus();},800);
+    }
+  }
+  submit.addEventListener('click',tryUnlock);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();});
+})();
+// ─────────────────────────────────────────────────────────────────────────
+
 const INSTRUCTOR_PIN='7018';
 const MODELS=[
   {label:'Bracket 1',                url:'models/obj%202.stl',        code:'ALPHA-101'},
