@@ -726,17 +726,17 @@ function getRayHit(e){
 function isVisible(pt){
   // Only cull in ortho mode — perspective mode allows free snap
   if(!isOrtho||!currentModel) return true;
+  // Use NDC depth: project point to clip space
+  // Points with NDC z close to -1 are at the front of the view volume
+  // Compare against a raycast hit to see if something is significantly in front
   const cam=activeCam();
-  const dir=new THREE.Vector3().subVectors(pt,cam.position).normalize();
+  // Cast ray FROM the point TOWARD the camera — anything it hits means pt is behind
+  const toCam=new THREE.Vector3().subVectors(cam.position,pt).normalize();
   const rc=new THREE.Raycaster();
-  rc.set(cam.position,dir);rc.near=0.001;
+  rc.set(pt,toCam);rc.near=modelSize*0.05;rc.far=modelSize*3;
   const hits=rc.intersectObject(currentModel,true);
-  if(!hits.length) return true;
-  const distToPt=cam.position.distanceTo(pt);
-  // Use a generous tolerance — 8% of model size
-  // This handles points ON surfaces without falsely culling them
-  // Only reject if something is significantly in front of the point
-  return hits[0].distance>=distToPt-modelSize*0.08;
+  // If the ray from pt toward camera hits something, pt is occluded
+  return hits.length===0;
 }
 
 function findVertexSnap(mx,my,thr=18){
