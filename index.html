@@ -616,15 +616,8 @@ function findEdgeSnap(mx,my,threshold=14){
     const cx2=x1+t*dx,cy2=y1+t*dy;
     const d=Math.hypot(cx2-mx,cy2-my);
     if(d>=threshold||d>=bestDist) continue;
-    // Visibility check on the interpolated 3D point
     const pt3d=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,t);
-    const dir=new THREE.Vector3().subVectors(pt3d,cam.position).normalize();
-    const rc=new THREE.Raycaster();rc.set(cam.position,dir);rc.near=0.001;
-    const hits=rc.intersectObject(currentModel,true);
-    if(hits.length>0){
-      const distToPt=cam.position.distanceTo(pt3d);
-      if(hits[0].distance<distToPt-modelSize*0.02) continue;
-    }
+    if(!isVisible(pt3d)) continue;
     bestDist=d;
     best=pt3d;
   }
@@ -711,21 +704,26 @@ function getRayHit(e){
   const hits=rc.intersectObject(currentModel,true);
   return hits.length?hits[0].point.clone():null;
 }
+function isVisible(pt){
+  // Only cull in ortho mode — perspective mode allows free snap
+  if(!isOrtho||!currentModel) return true;
+  const cam=activeCam();
+  const dir=new THREE.Vector3().subVectors(pt,cam.position).normalize();
+  const rc=new THREE.Raycaster();
+  rc.set(cam.position,dir);rc.near=0.001;
+  const hits=rc.intersectObject(currentModel,true);
+  if(!hits.length) return true;
+  return hits[0].distance>=cam.position.distanceTo(pt)-modelSize*0.025;
+}
+
 function findVertexSnap(mx,my,thr=18){
-  if(!vertexPositions.length)return null;
+  if(!vertexPositions.length) return null;
   let best=null,bestD=Infinity;
   for(const v of vertexPositions){
     const s=toScreen(v);
     const d=Math.hypot(s.x-mx,s.y-my);
     if(d>=thr||d>=bestD) continue;
-    // Visibility check — skip occluded vertices
-    if(currentModel){
-      const dir=new THREE.Vector3().subVectors(v,activeCam().position).normalize();
-      const rc=new THREE.Raycaster();
-      rc.set(activeCam().position,dir);rc.near=0.001;
-      const hits=rc.intersectObject(currentModel,true);
-      if(hits.length>0&&hits[0].distance<activeCam().position.distanceTo(v)-modelSize*0.02) continue;
-    }
+    if(!isVisible(v)) continue;
     bestD=d;best=v.clone();
   }
   return best;
@@ -742,23 +740,23 @@ function findCLSnap(mx,my,thr=28){
   // Priority 1: circle centers
   for(const c of circleCenters){
     const s=toScreen(c);const d=Math.hypot(s.x-mx,s.y-my);
-    if(d<thr&&d<bestD){bestD=d;best=c.clone();}
+    if(d<thr&&d<bestD&&isVisible(c)){bestD=d;best=c.clone();}
   }
-  // Priority 2: centerline endpoints (tips of the lines)
+  // Priority 2: centerline endpoints
   for(const seg of centerlineSegs){
     if(seg.endpoints){
       for(const ep of seg.endpoints){
         const s=toScreen(ep);const d=Math.hypot(s.x-mx,s.y-my);
-        if(d<thr&&d<bestD){bestD=d;best=ep.clone();}
+        if(d<thr&&d<bestD&&isVisible(ep)){bestD=d;best=ep.clone();}
       }
     }
   }
-  // Priority 3: anywhere along centerline segment
+  // Priority 3: along centerline
   for(const seg of centerlineSegs){
     for(let i=1;i<=47;i++){
       const pt=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,i/48);
       const s=toScreen(pt);const d=Math.hypot(s.x-mx,s.y-my);
-      if(d<thr&&d<bestD){bestD=d;best=pt.clone();}
+      if(d<thr&&d<bestD&&isVisible(pt)){bestD=d;best=pt.clone();}
     }
   }
   return best;
@@ -1376,8 +1374,17 @@ canvas.addEventListener('click',e=>{
 
   // ANGLE
   if(measureMode==='angle'){
-    anglePts.push(hitPt.clone());
-    const dot=makeSphere(hitPt,0x5E35B1,modelSize*0.016);scene.add(dot);angleMarkers.push(dot);
+    // In ortho mode, project the clicked point onto the camera view plane
+    // so all 3 angle points are coplanar with the view for true 2D angle
+    let anglePt=hitPt.clone();
+    if(isOrtho&&anglePts.length>0){
+      const camFwd=new THREE.Vector3();camera.getWorldDirection(camFwd);
+      const refPt=anglePts[0]; // project onto plane through first point
+      const offset=new THREE.Vector3().subVectors(anglePt,refPt).dot(camFwd);
+      anglePt.addScaledVector(camFwd,-offset);
+    }
+    anglePts.push(anglePt);
+    const dot=makeSphere(anglePt,0x5E35B1,modelSize*0.016);scene.add(dot);angleMarkers.push(dot);
     if(anglePts.length===1){measureHint.textContent='Click first arm point';announce('Vertex set.');}
     else if(anglePts.length===2){
       const arm1L=new THREE.Line(new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[1]]),new THREE.LineBasicMaterial({color:0x5E35B1}));
