@@ -56,10 +56,8 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
 .mbadge-linear{background:#E6F2F6;color:var(--avc-steel);}
 .mbadge-radial{background:var(--avc-orange-bg);color:var(--avc-orange);}
 .mbadge-angle{background:#EDE7F6;color:#5E35B1;}
-.mbadge-hdim{background:#E8F5E9;color:#2E7D32;}
-.mbadge-vdim{background:#E8F5E9;color:#2E7D32;}
-.mbadge-hdim{background:#E8F5E9;color:#2E7D32;}
-.mbadge-vdim{background:#E8F5E9;color:#2E7D32;}
+.mbadge-locate{background:#E8F5E9;color:#2E7D32;}
+.mbadge-locate{background:#E8F5E9;color:#2E7D32;}
 .mbadge-hdim{background:#E8F5E9;color:#2E7D32;}
 .mbadge-vdim{background:#FFF8E1;color:#F57F17;}
 #code-modal{position:absolute;inset:0;background:rgba(10,14,25,0.88);display:none;align-items:center;justify-content:center;z-index:100;}
@@ -111,8 +109,7 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
     <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — 3 points on curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
     <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
-    <button class="tb-btn" id="btn-hdim" aria-pressed="false" aria-label="Horizontal dimension — 2 points, measures X distance"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H-Dim</button>
-    <button class="tb-btn" id="btn-vdim" aria-pressed="false" aria-label="Vertical dimension — 2 points, measures Y distance"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V-Dim</button>
+    <button class="tb-btn" id="btn-locate" aria-pressed="false" aria-label="Locate — click 2 points to get horizontal, vertical and total distance"><i class="ti ti-crosshair" style="font-size:14px;" aria-hidden="true"></i>Locate</button>
     
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-wire" aria-pressed="false" aria-label="Toggle wireframe"><i class="ti ti-topology-star" style="font-size:14px;" aria-hidden="true"></i>Wireframe</button>
@@ -130,10 +127,10 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <div class="kbd-row"><span>Views</span><span><kbd>1</kbd>–<kbd>6</kbd></span></div>
     <div class="kbd-row"><span>Reset / Ortho</span><span><kbd>R</kbd> / <kbd>O</kbd></span></div>
     <div class="kbd-row"><span>Linear / Radial / Angle</span><span><kbd>L</kbd> / <kbd>C</kbd> / <kbd>A</kbd></span></div>
-    <div class="kbd-row"><span>H-Dim / V-Dim</span><span><kbd>H</kbd> / <kbd>V</kbd></span></div>
-    <div class="kbd-row"><span>H-Dim / V-Dim</span><span><kbd>H</kbd> / <kbd>V</kbd></span></div>
+    <div class="kbd-row"><span>Locate (H+V+Total)</span><span><kbd>G</kbd></span></div>
+    <div class="kbd-row"><span>Locate (H+V+Total)</span><span><kbd>G</kbd></span></div>
     <div class="kbd-row"><span>Wireframe / Cancel</span><span><kbd>W</kbd> / <kbd>Esc</kbd></span></div>
-    <div class="kbd-row"><span>H-Dim / V-Dim</span><span><kbd>H</kbd> / <kbd>V</kbd></span></div>
+    <div class="kbd-row"><span>Locate (H+V+Total)</span><span><kbd>G</kbd></span></div>
   </div>
 
   <div class="ctrl-panel" role="group" aria-label="On-screen navigation controls">
@@ -348,7 +345,7 @@ let linearPt1=null,linearMarker1=null,linearPreview=null;
 let radialPts=[],radialMarkers=[],radialPreview=null;
 let anglePts=[],angleMarkers=[];
 let circleCenters=[],centerlineSegs=[];
-let dimPt1=null,dimMarker1=null,dimPreview=null;
+let locPt1=null,locMarker1=null,locPreview=null;
 let hvPt1=null,hvMarker1=null,hvPreview=null; // shared state for H-Dim and V-Dim
 let hDimPt1=null,hDimMarker1=null;
 let vDimPt1=null,vDimMarker1=null;
@@ -419,16 +416,69 @@ function setIso(az){
   animateTo(p,'Isometric');
 }
 
+// Store edge segments for edge snapping
+let edgeSegments=[];
+
 function extractVertices(obj){
   vertexPositions=[];
+  edgeSegments=[];
   obj.traverse(child=>{
     if(!child.isMesh)return;
     const pos=child.geometry.attributes.position;
     if(!pos)return;
     const mat=child.matrixWorld;
-    for(let i=0;i<pos.count;i++)
-      vertexPositions.push(new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat));
+    // Extract vertices
+    const verts=[];
+    for(let i=0;i<pos.count;i++){
+      const v=new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i)).applyMatrix4(mat);
+      vertexPositions.push(v.clone());
+      verts.push(v);
+    }
+    // Extract unique edges from triangles
+    // Use a map to deduplicate edges by their vertex indices
+    const edgeMap={};
+    const count=pos.count;
+    for(let t=0;t<count;t+=3){
+      const pairs=[[t,t+1],[t+1,t+2],[t+2,t]];
+      pairs.forEach(([a,b])=>{
+        const key=Math.min(a,b)+'-'+Math.max(a,b);
+        if(!edgeMap[key]){
+          edgeMap[key]=true;
+          edgeSegments.push({p1:verts[a].clone(),p2:verts[b].clone()});
+        }
+      });
+    }
   });
+  // Limit edge segments to avoid performance issues on dense meshes
+  if(edgeSegments.length>50000) edgeSegments=edgeSegments.slice(0,50000);
+}
+
+// Find closest point on any edge segment to the mouse cursor
+function findEdgeSnap(mx,my,threshold=14){
+  if(!edgeSegments.length) return null;
+  let best=null,bestDist=Infinity;
+  const cam=activeCam();
+  const vw=viewport.clientWidth,vh=viewport.clientHeight;
+  for(const seg of edgeSegments){
+    // Project both endpoints to screen
+    const s1=seg.p1.clone().project(cam);
+    const s2=seg.p2.clone().project(cam);
+    const x1=(s1.x+1)/2*vw, y1=(-s1.y+1)/2*vh;
+    const x2=(s2.x+1)/2*vw, y2=(-s2.y+1)/2*vh;
+    // Find closest point on screen-space segment to mouse
+    const dx=x2-x1,dy=y2-y1;
+    const lenSq=dx*dx+dy*dy;
+    if(lenSq<0.01) continue;
+    const t=Math.max(0,Math.min(1,((mx-x1)*dx+(my-y1)*dy)/lenSq));
+    const cx=x1+t*dx,cy=y1+t*dy;
+    const d=Math.hypot(cx-mx,cy-my);
+    if(d<threshold&&d<bestDist){
+      bestDist=d;
+      // Interpolate 3D point on the edge
+      best=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,t);
+    }
+  }
+  return best;
 }
 
 function makeMat(){return new THREE.MeshStandardMaterial({color:0x9BBFD4,roughness:0.45,metalness:0.15,side:THREE.DoubleSide});}
@@ -536,9 +586,11 @@ function findCLSnap(mx,my,thr=20){
   return best;
 }
 function getBestSnap(mx,my){
+  // Priority: centerline > circle center > vertex > edge
   const cl=findCLSnap(mx,my);if(cl)return{pt:cl,type:'cl'};
   const cc=findCCSnap(mx,my);if(cc)return{pt:cc,type:'cc'};
-  const v=findVertexSnap(mx,my);if(v)return{pt:v,type:'vert'};
+  const v=findVertexSnap(mx,my,16);if(v)return{pt:v,type:'vert'};
+  const e=findEdgeSnap(mx,my,14);if(e)return{pt:e,type:'edge'};
   return null;
 }
 function makeSphere(pt,color,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r||modelSize*0.014),new THREE.MeshBasicMaterial({color}));m.position.copy(pt);return m;}
@@ -776,7 +828,7 @@ function makeHVDimension(pt1, pt2, axis, color){
 
 function setMode(mode){
   cancelMeasure();
-  const btns=['linear','radial','angle','hdim','vdim'];
+  const btns=['linear','radial','angle','locate'];
   if(measureMode===mode){
     measureMode=null;controls.enabled=true;measureHint.style.display='none';
     btns.forEach(b=>{document.getElementById('btn-'+b).setAttribute('aria-pressed','false');document.getElementById('btn-'+b).classList.remove('active');});
@@ -787,7 +839,7 @@ function setMode(mode){
   const hints={linear:'Click point 1 (snaps to vertices / centerlines)',radial:'Click point 1 of 3 on the curve',angle:'Click vertex point',hdim:'Click point 1 — snaps to circle centers, vertices, corners',vdim:'Click point 1 — snaps to circle centers, vertices, corners'};
   const bgs={linear:'rgba(43,106,130,0.92)',radial:'rgba(196,114,26,0.92)',angle:'rgba(94,53,177,0.92)',hdim:'rgba(46,125,50,0.92)',vdim:'rgba(245,127,23,0.92)'};
   measureHint.style.background=bgs[mode];measureHint.textContent=hints[mode];
-  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.',hdim:'H-Dim: click start then snap point — measures screen-horizontal distance from any view.',vdim:'V-Dim: click start then snap point — measures screen-vertical distance from any view.'};
+  const msgs={linear:'Linear: click 2 points.',radial:'Radial: click 3 points on any curve.',angle:'Angle: click vertex, then 2 arm points.',locate:'Locate: click 2 points — shows horizontal, vertical, and total distance.',};
   announce(msgs[mode]);
 }
 
@@ -799,10 +851,13 @@ canvas.addEventListener('mousemove',e=>{
   if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
   if(snap){
     const col=snap.type==='vert'?0xC4721A:0x00BCD4;
-    snapSphere=makeSphere(snap.pt,col,modelSize*0.018);scene.add(snapSphere);
+    const snapCol=snap.type==='edge'?0xFFEB3B:snap.type==='vert'?0xC4721A:0x00BCD4;
+    snapSphere=makeSphere(snap.pt,snapCol,modelSize*0.018);scene.add(snapSphere);
     snapIndicator.style.display='block';
-    snapIndicator.textContent=snap.type==='cl'?'Snapped to centerline':snap.type==='cc'?'Snapped to circle center':'Snapped to vertex';
-    snapIndicator.style.background=snap.type==='vert'?'#C4721A':'#00838F';
+    const snapLabels={cl:'Snapped to centerline',cc:'Snapped to circle center',vert:'Snapped to vertex',edge:'Snapped to edge'};
+    snapIndicator.textContent=snapLabels[snap.type]||'Snapped';
+    const snapBgs={cl:'#00838F',cc:'#00838F',vert:'#C4721A',edge:'#795548'};
+    snapIndicator.style.background=snapBgs[snap.type]||'#C4721A';
   }else{snapIndicator.style.display='none';}
 
   const hitPt=snap?snap.pt:getRayHit(e);
@@ -818,29 +873,16 @@ canvas.addEventListener('mousemove',e=>{
     const c=circumscribed(radialPts[0],radialPts[1],hitPt);
     if(c){radialPreview=new THREE.Line(makeCircleGeom(c.center,c.radius,c.normal,96),new THREE.LineBasicMaterial({color:0xC4721A}));scene.add(radialPreview);}
   }
-  // H/V DIM preview — screen-space locked, works from any view
-  if((measureMode==='hdim'||measureMode==='vdim')&&dimPt1){
-    if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
+  // LOCATE preview — show linear line from pt1 to current position
+  if(measureMode==='locate'&&locPt1){
+    if(locPreview){scene.remove(locPreview);locPreview=null;}
     const hitPt2=snap?snap.pt:getRayHit(e);
     if(hitPt2){
-      const p1=dimPt1.clone();
-      const p2=hitPt2.clone();
-      // Get screen-space axis vectors from camera
-      const camRight=new THREE.Vector3();
-      const camUp=new THREE.Vector3();
-      camera.matrix.extractBasis(camRight,camUp,new THREE.Vector3());
-      camRight.normalize(); camUp.normalize();
-      // Project p1->p2 onto the chosen screen axis
-      const diff=new THREE.Vector3().subVectors(p2,p1);
-      const axis=measureMode==='hdim'?camRight:camUp;
-      const proj=diff.dot(axis);
-      const lineEnd=p1.clone().addScaledVector(axis,proj);
-      const geo=new THREE.BufferGeometry().setFromPoints([p1,lineEnd]);
-      dimPreview=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x2E7D32}));
-      scene.add(dimPreview);
-      if(snapSphere){scene.remove(snapSphere);snapSphere=null;}
-      snapSphere=makeSphere(p2,snap?0x00BCD4:0xC4721A,modelSize*0.018);
-      scene.add(snapSphere);
+      locPreview=new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([locPt1,hitPt2]),
+        new THREE.LineBasicMaterial({color:0x2E7D32})
+      );
+      scene.add(locPreview);
     }
   }
 
@@ -972,75 +1014,67 @@ canvas.addEventListener('click',e=>{
     }
   }
 
-  // H-DIM / V-DIM — screen-space locked axis, works from any view angle
-  if(measureMode==='hdim'||measureMode==='vdim'){
-    const isH=measureMode==='hdim';
-    if(!dimPt1){
-      dimPt1=hitPt.clone();
-      if(dimMarker1){scene.remove(dimMarker1);}
-      dimMarker1=makeSphere(dimPt1,0x2E7D32,modelSize*0.018);scene.add(dimMarker1);
-      measureHint.textContent=isH
-        ? 'Click snap point — line locks to screen horizontal'
-        : 'Click snap point — line locks to screen vertical';
-      announce('Start point set. Click snap point to complete '+(isH?'horizontal':'vertical')+' dimension.');
+  // LOCATE — click 2 points, get horizontal component, vertical component, total distance
+  if(measureMode==='locate'){
+    if(!locPt1){
+      locPt1=hitPt.clone();
+      if(locMarker1){scene.remove(locMarker1);}
+      locMarker1=makeSphere(locPt1,0x2E7D32,modelSize*0.018);scene.add(locMarker1);
+      measureHint.textContent='Click point 2 — corner, edge, or any snap point';
+      announce('Point 1 set. Click point 2.');
     }else{
-      const p1=dimPt1.clone();
+      const p1=locPt1.clone();
       const p2=hitPt.clone();
-      if(dimPreview){scene.remove(dimPreview);dimPreview=null;}
-      if(dimMarker1){scene.remove(dimMarker1);dimMarker1=null;}
+      if(locPreview){scene.remove(locPreview);locPreview=null;}
+      if(locMarker1){scene.remove(locMarker1);locMarker1=null;}
 
-      // Screen-space axis from camera
+      // Get current camera screen axes
       const camRight=new THREE.Vector3();
       const camUp=new THREE.Vector3();
       camera.matrix.extractBasis(camRight,camUp,new THREE.Vector3());
-      camRight.normalize();camUp.normalize();
+      camRight.normalize(); camUp.normalize();
 
-      // Project p2-p1 onto chosen screen axis
+      // Decompose p1->p2 into screen H and V components
       const diff=new THREE.Vector3().subVectors(p2,p1);
-      const axis=isH?camRight:camUp;
-      const proj=diff.dot(axis);
-      const dimVal=Math.abs(proj);
-      const lineEnd=p1.clone().addScaledVector(axis,proj);
+      const hProj=diff.dot(camRight);   // horizontal screen component
+      const vProj=diff.dot(camUp);      // vertical screen component
+      const hDist=Math.abs(hProj);
+      const vDist=Math.abs(vProj);
+      const total=p1.distanceTo(p2);
+
+      // Corner point: p1 + H component (the right-angle corner)
+      const corner=p1.clone().addScaledVector(camRight,hProj);
 
       const mat=new THREE.LineBasicMaterial({color:0x2E7D32});
+      const dashMat=new THREE.LineDashedMaterial({color:0x2E7D32,dashSize:modelSize*0.03,gapSize:modelSize*0.015});
 
-      // Main dimension line (locked to screen axis)
-      const dimLine=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([p1,lineEnd]),mat
-      );
+      // Horizontal leg: p1 → corner
+      const hLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1,corner]),mat);
+      // Vertical leg: corner → p2
+      const vLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([corner,p2]),mat);
+      // Hypotenuse (total): dashed p1 → p2
+      const hyp=new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1,p2]),dashMat);
+      hyp.computeLineDistances();
+      // Right-angle marker at corner
+      const raSize=modelSize*0.025;
+      const ra1=corner.clone().addScaledVector(camRight,-Math.sign(hProj)*raSize);
+      const ra2=ra1.clone().addScaledVector(camUp,Math.sign(vProj)*raSize);
+      const ra3=corner.clone().addScaledVector(camUp,Math.sign(vProj)*raSize);
+      const raLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([ra1,ra2,ra3]),mat);
+      // Endpoint markers
+      const sA=makeSphere(p1,0x2E7D32,modelSize*0.016);
+      const sB=makeSphere(p2,0x2E7D32,modelSize*0.016);
+      const sC=makeSphere(corner,0x2E7D32,modelSize*0.010);
 
-      // Perpendicular tick marks at each end
-      const tickAxis=isH?camUp:camRight;
-      const tickLen=modelSize*0.04;
-      const tick1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-        p1.clone().addScaledVector(tickAxis,-tickLen),
-        p1.clone().addScaledVector(tickAxis, tickLen)
-      ]),mat);
-      const tick2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-        lineEnd.clone().addScaledVector(tickAxis,-tickLen),
-        lineEnd.clone().addScaledVector(tickAxis, tickLen)
-      ]),mat);
-
-      // Dashed guide line from snap point to lineEnd
-      const refMat=new THREE.LineDashedMaterial({color:0x2E7D32,dashSize:modelSize*0.03,gapSize:modelSize*0.015});
-      const refLine=new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([p2,lineEnd]),refMat
-      );
-      refLine.computeLineDistances();
-
-      const sA=makeSphere(p1,0x2E7D32,modelSize*0.014);
-      const sB=makeSphere(lineEnd,0x2E7D32,modelSize*0.014);
-      const sSnap=makeSphere(p2,0x00BCD4,modelSize*0.012);
-
-      scene.add(dimLine);scene.add(tick1);scene.add(tick2);
-      scene.add(refLine);scene.add(sA);scene.add(sB);scene.add(sSnap);
+      scene.add(hLine);scene.add(vLine);scene.add(hyp);scene.add(raLine);
+      scene.add(sA);scene.add(sB);scene.add(sC);
 
       measureCount++;
-      const label=(isH?'H':'V')+'-Dim: '+dimVal.toFixed(4)+' units';
-      addRow(measureCount,isH?'hdim':'vdim',label,[dimLine,tick1,tick2,refLine,sA,sB,sSnap]);
-      announce(label+' (screen-'+(isH?'horizontal':'vertical')+' distance)');
-      dimPt1=null;
-      measureHint.textContent='Click start point — snaps to circle centers, centerlines & vertices';
+      const label='H:'+hDist.toFixed(4)+'  V:'+vDist.toFixed(4)+'  Total:'+total.toFixed(4);
+      addRow(measureCount,'locate',label,[hLine,vLine,hyp,raLine,sA,sB,sC]);
+      announce('Locate: Horizontal='+hDist.toFixed(4)+' Vertical='+vDist.toFixed(4)+' Total='+total.toFixed(4)+' units');
+      locPt1=null;
+      measureHint.textContent='Click point 1 — circle center, corner, or vertex';
     }
   }
 
@@ -1128,14 +1162,11 @@ document.getElementById('btn-iso3').addEventListener('click',()=>setIso(45));
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-linear').addEventListener('click',()=>setMode('linear'));
-document.getElementById('btn-hdim').addEventListener('click',()=>setMode('hdim'));
-document.getElementById('btn-vdim').addEventListener('click',()=>setMode('vdim'));
+document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
 document.getElementById('btn-angle').addEventListener('click',()=>setMode('angle'));
-document.getElementById('btn-hdim').addEventListener('click',()=>setMode('hdim'));
-document.getElementById('btn-vdim').addEventListener('click',()=>setMode('vdim'));
-document.getElementById('btn-hdim').addEventListener('click',()=>setMode('hdim'));
-document.getElementById('btn-vdim').addEventListener('click',()=>setMode('vdim'));
+document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
+document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAll();cancelMeasure();announce('Cleared.');});
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
 
@@ -1156,10 +1187,8 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='l'||e.key==='L')setMode('linear');
     else if(e.key==='c'||e.key==='C')setMode('radial');
     else if(e.key==='a'||e.key==='A')setMode('angle');
-    else if(e.key==='h'||e.key==='H')setMode('hdim');
-    else if(e.key==='v'||e.key==='V')setMode('vdim');else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
-    else if(e.key==='h'||e.key==='H')setMode('hdim');
-    else if(e.key==='v'||e.key==='V')setMode('vdim');
+    else if(e.key==='g'||e.key==='G')setMode('locate');else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
+    else if(e.key==='g'||e.key==='G')setMode('locate');
     else if(e.key==='1'||e.code==='Digit1')setView('front');else if(e.key==='2'||e.code==='Digit2')setView('back');
     else if(e.key==='3'||e.code==='Digit3')setView('right');else if(e.key==='4'||e.code==='Digit4')setView('left');
     else if(e.key==='5'||e.code==='Digit5')setView('top');else if(e.key==='6'||e.code==='Digit6')setView('bottom');
