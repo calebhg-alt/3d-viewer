@@ -605,23 +605,28 @@ function findEdgeSnap(mx,my,threshold=14){
   const cam=activeCam();
   const vw=viewport.clientWidth,vh=viewport.clientHeight;
   for(const seg of edgeSegments){
-    // Project both endpoints to screen
     const s1=seg.p1.clone().project(cam);
     const s2=seg.p2.clone().project(cam);
     const x1=(s1.x+1)/2*vw, y1=(-s1.y+1)/2*vh;
     const x2=(s2.x+1)/2*vw, y2=(-s2.y+1)/2*vh;
-    // Find closest point on screen-space segment to mouse
     const dx=x2-x1,dy=y2-y1;
     const lenSq=dx*dx+dy*dy;
     if(lenSq<0.01) continue;
     const t=Math.max(0,Math.min(1,((mx-x1)*dx+(my-y1)*dy)/lenSq));
-    const cx=x1+t*dx,cy=y1+t*dy;
-    const d=Math.hypot(cx-mx,cy-my);
-    if(d<threshold&&d<bestDist){
-      bestDist=d;
-      // Interpolate 3D point on the edge
-      best=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,t);
+    const cx2=x1+t*dx,cy2=y1+t*dy;
+    const d=Math.hypot(cx2-mx,cy2-my);
+    if(d>=threshold||d>=bestDist) continue;
+    // Visibility check on the interpolated 3D point
+    const pt3d=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,t);
+    const dir=new THREE.Vector3().subVectors(pt3d,cam.position).normalize();
+    const rc=new THREE.Raycaster();rc.set(cam.position,dir);rc.near=0.001;
+    const hits=rc.intersectObject(currentModel,true);
+    if(hits.length>0){
+      const distToPt=cam.position.distanceTo(pt3d);
+      if(hits[0].distance<distToPt-modelSize*0.02) continue;
     }
+    bestDist=d;
+    best=pt3d;
   }
   return best;
 }
@@ -709,7 +714,20 @@ function getRayHit(e){
 function findVertexSnap(mx,my,thr=18){
   if(!vertexPositions.length)return null;
   let best=null,bestD=Infinity;
-  for(const v of vertexPositions){const s=toScreen(v),d=Math.hypot(s.x-mx,s.y-my);if(d<thr&&d<bestD){bestD=d;best=v.clone();}}
+  for(const v of vertexPositions){
+    const s=toScreen(v);
+    const d=Math.hypot(s.x-mx,s.y-my);
+    if(d>=thr||d>=bestD) continue;
+    // Visibility check — skip occluded vertices
+    if(currentModel){
+      const dir=new THREE.Vector3().subVectors(v,activeCam().position).normalize();
+      const rc=new THREE.Raycaster();
+      rc.set(activeCam().position,dir);rc.near=0.001;
+      const hits=rc.intersectObject(currentModel,true);
+      if(hits.length>0&&hits[0].distance<activeCam().position.distanceTo(v)-modelSize*0.02) continue;
+    }
+    bestD=d;best=v.clone();
+  }
   return best;
 }
 function findCCSnap(mx,my,thr=22){
@@ -838,13 +856,33 @@ function circumscribed(p1,p2,p3){
 
 // ── Angle computation ─────────────────────────────────────────────────────────
 function computeAngle(vertex,arm1,arm2){
+  // If in ortho mode, project all points onto camera view plane for true 2D angle
+  if(isOrtho){
+    const camFwd=new THREE.Vector3();
+    camera.getWorldDirection(camFwd);
+    // Project points onto plane perpendicular to camera
+    function projectToViewPlane(pt){
+      const d=new THREE.Vector3().subVectors(pt,vertex).dot(camFwd);
+      return new THREE.Vector3().subVectors(pt,camFwd.clone().multiplyScalar(d));
+    }
+    const v1proj=new THREE.Vector3().subVectors(projectToViewPlane(arm1),projectToViewPlane(vertex)).normalize();
+    const v2proj=new THREE.Vector3().subVectors(projectToViewPlane(arm2),projectToViewPlane(vertex)).normalize();
+    return THREE.MathUtils.radToDeg(Math.acos(Math.max(-1,Math.min(1,v1proj.dot(v2proj)))));
+  }
   const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
   const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
   return THREE.MathUtils.radToDeg(Math.acos(Math.max(-1,Math.min(1,v1.dot(v2)))));
 }
 function makeAngleArc(vertex,arm1,arm2,radius){
-  const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
-  const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
+  let a1=arm1,a2=arm2,vert=vertex;
+  if(isOrtho){
+    // Project to view plane for true 2D arc
+    const camFwd=new THREE.Vector3();camera.getWorldDirection(camFwd);
+    function pvp(pt){const d=new THREE.Vector3().subVectors(pt,vert).dot(camFwd);return new THREE.Vector3().subVectors(pt,camFwd.clone().multiplyScalar(d));}
+    a1=pvp(arm1);a2=pvp(arm2);vert=pvp(vertex);
+  }
+  const v1=new THREE.Vector3().subVectors(a1,vert).normalize();
+  const v2=new THREE.Vector3().subVectors(a2,vert).normalize();
   const normal=new THREE.Vector3().crossVectors(v1,v2).normalize();
   if(normal.length()<0.001)return null;
   const angleDeg=computeAngle(vertex,arm1,arm2);
