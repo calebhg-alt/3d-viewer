@@ -150,6 +150,9 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn" id="btn-dlock" aria-pressed="false" aria-label="Lock to world Z axis (depth)" title="Locks measurement to world Z axis (depth)"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Z</button>
     <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — 3 points on curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
     <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
+    <button class="tb-btn" id="btn-axy" aria-pressed="false" aria-label="Lock angle to XY plane (top view)" title="Lock angle to XY plane"><span style="font-size:11px;font-weight:600;">XY</span></button>
+    <button class="tb-btn" id="btn-axz" aria-pressed="false" aria-label="Lock angle to XZ plane (front view)" title="Lock angle to XZ plane"><span style="font-size:11px;font-weight:600;">XZ</span></button>
+    <button class="tb-btn" id="btn-ayz" aria-pressed="false" aria-label="Lock angle to YZ plane (side view)" title="Lock angle to YZ plane"><span style="font-size:11px;font-weight:600;">YZ</span></button>
     <button class="tb-btn" id="btn-locate" aria-pressed="false" aria-label="Locate — click 2 points to get horizontal, vertical and total distance"><i class="ti ti-crosshair" style="font-size:14px;" aria-hidden="true"></i>Locate</button>
     
     <div class="tb-sep" role="separator"></div>
@@ -419,6 +422,7 @@ let radialPts=[],radialMarkers=[],radialPreview=null;
 let anglePts=[],angleMarkers=[];
 let circleCenters=[],centerlineSegs=[];
 let locPt1=null,locMarker1=null,locPreview=null;
+let anglePlane='FREE'; // 'FREE'|'XY'|'XZ'|'YZ'
 let linearLock='none'; // 'none'|'h'(X)|'v'(Y)|'d'(Z) — locks linear to world axis
 let hvPt1=null,hvMarker1=null,hvPreview=null; // shared state for H-Dim and V-Dim
 let hDimPt1=null,hDimMarker1=null;
@@ -724,19 +728,8 @@ function getRayHit(e){
   return hits.length?hits[0].point.clone():null;
 }
 function isVisible(pt){
-  // Only cull in ortho mode — perspective mode allows free snap
-  if(!isOrtho||!currentModel) return true;
-  // Use NDC depth: project point to clip space
-  // Points with NDC z close to -1 are at the front of the view volume
-  // Compare against a raycast hit to see if something is significantly in front
-  const cam=activeCam();
-  // Cast ray FROM the point TOWARD the camera — anything it hits means pt is behind
-  const toCam=new THREE.Vector3().subVectors(cam.position,pt).normalize();
-  const rc=new THREE.Raycaster();
-  rc.set(pt,toCam);rc.near=modelSize*0.05;rc.far=modelSize*3;
-  const hits=rc.intersectObject(currentModel,true);
-  // If the ray from pt toward camera hits something, pt is occluded
-  return hits.length===0;
+  // Free snap always — no visibility culling
+  return true;
 }
 
 function findVertexSnap(mx,my,thr=18){
@@ -876,32 +869,30 @@ function circumscribed(p1,p2,p3){
 }
 
 // ── Angle computation ─────────────────────────────────────────────────────────
-function computeAngle(vertex,arm1,arm2){
-  // If in ortho mode, project all points onto camera view plane for true 2D angle
-  if(isOrtho){
-    const camFwd=new THREE.Vector3();
-    camera.getWorldDirection(camFwd);
-    // Project points onto plane perpendicular to camera
-    function projectToViewPlane(pt){
-      const d=new THREE.Vector3().subVectors(pt,vertex).dot(camFwd);
-      return new THREE.Vector3().subVectors(pt,camFwd.clone().multiplyScalar(d));
-    }
-    const v1proj=new THREE.Vector3().subVectors(projectToViewPlane(arm1),projectToViewPlane(vertex)).normalize();
-    const v2proj=new THREE.Vector3().subVectors(projectToViewPlane(arm2),projectToViewPlane(vertex)).normalize();
-    return THREE.MathUtils.radToDeg(Math.acos(Math.max(-1,Math.min(1,v1proj.dot(v2proj)))));
+function computeAngle(vertex,arm1,arm2,plane){
+  // Project all 3 points onto chosen world plane before computing angle
+  function projectToPlane(pt){
+    if(plane==='XY') return new THREE.Vector3(pt.x,pt.y,vertex.z);
+    if(plane==='XZ') return new THREE.Vector3(pt.x,vertex.y,pt.z);
+    if(plane==='YZ') return new THREE.Vector3(vertex.x,pt.y,pt.z);
+    return pt.clone(); // 'FREE' — no projection
   }
-  const v1=new THREE.Vector3().subVectors(arm1,vertex).normalize();
-  const v2=new THREE.Vector3().subVectors(arm2,vertex).normalize();
+  const v=projectToPlane(vertex);
+  const a1=projectToPlane(arm1);
+  const a2=projectToPlane(arm2);
+  const v1=new THREE.Vector3().subVectors(a1,v).normalize();
+  const v2=new THREE.Vector3().subVectors(a2,v).normalize();
   return THREE.MathUtils.radToDeg(Math.acos(Math.max(-1,Math.min(1,v1.dot(v2)))));
 }
-function makeAngleArc(vertex,arm1,arm2,radius){
-  let a1=arm1,a2=arm2,vert=vertex;
-  if(isOrtho){
-    // Project to view plane for true 2D arc
-    const camFwd=new THREE.Vector3();camera.getWorldDirection(camFwd);
-    function pvp(pt){const d=new THREE.Vector3().subVectors(pt,vert).dot(camFwd);return new THREE.Vector3().subVectors(pt,camFwd.clone().multiplyScalar(d));}
-    a1=pvp(arm1);a2=pvp(arm2);vert=pvp(vertex);
+function makeAngleArc(vertex,arm1,arm2,radius,plane){
+  // Project points to chosen plane
+  function pp(pt){
+    if(plane==='XY') return new THREE.Vector3(pt.x,pt.y,vertex.z);
+    if(plane==='XZ') return new THREE.Vector3(pt.x,vertex.y,pt.z);
+    if(plane==='YZ') return new THREE.Vector3(vertex.x,pt.y,pt.z);
+    return pt.clone();
   }
+  const vert=pp(vertex),a1=pp(arm1),a2=pp(arm2);
   const v1=new THREE.Vector3().subVectors(a1,vert).normalize();
   const v2=new THREE.Vector3().subVectors(a2,vert).normalize();
   const normal=new THREE.Vector3().crossVectors(v1,v2).normalize();
@@ -1121,7 +1112,7 @@ canvas.addEventListener('mousemove',e=>{
     angleMarkers.filter(m=>m.userData.preview).forEach(m=>scene.remove(m));
     angleMarkers=angleMarkers.filter(m=>!m.userData.preview);
     const arcR=Math.min(anglePts[0].distanceTo(anglePts[1]),anglePts[0].distanceTo(hitPt))*0.4;
-    const ag=makeAngleArc(anglePts[0],anglePts[1],hitPt,arcR);
+    const ag=makeAngleArc(anglePts[0],anglePts[1],hitPt,arcR,anglePlane);
     if(ag){const al=new THREE.Line(ag,new THREE.LineBasicMaterial({color:0x5E35B1}));al.userData.preview=true;scene.add(al);angleMarkers.push(al);}
   }
   // H/V dim preview line
@@ -1397,17 +1388,8 @@ canvas.addEventListener('click',e=>{
 
   // ANGLE
   if(measureMode==='angle'){
-    // In ortho mode, project the clicked point onto the camera view plane
-    // so all 3 angle points are coplanar with the view for true 2D angle
-    let anglePt=hitPt.clone();
-    if(isOrtho&&anglePts.length>0){
-      const camFwd=new THREE.Vector3();camera.getWorldDirection(camFwd);
-      const refPt=anglePts[0]; // project onto plane through first point
-      const offset=new THREE.Vector3().subVectors(anglePt,refPt).dot(camFwd);
-      anglePt.addScaledVector(camFwd,-offset);
-    }
-    anglePts.push(anglePt);
-    const dot=makeSphere(anglePt,0x5E35B1,modelSize*0.016);scene.add(dot);angleMarkers.push(dot);
+    anglePts.push(hitPt.clone());
+    const dot=makeSphere(hitPt,0x5E35B1,modelSize*0.016);scene.add(dot);angleMarkers.push(dot);
     if(anglePts.length===1){measureHint.textContent='Click first arm point';announce('Vertex set.');}
     else if(anglePts.length===2){
       const arm1L=new THREE.Line(new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[1]]),new THREE.LineBasicMaterial({color:0x5E35B1}));
@@ -1416,12 +1398,12 @@ canvas.addEventListener('click',e=>{
     }else if(anglePts.length===3){
       angleMarkers.filter(m=>m.userData.preview).forEach(m=>scene.remove(m));
       angleMarkers=angleMarkers.filter(m=>!m.userData.preview);
-      const angleDeg=computeAngle(anglePts[0],anglePts[1],anglePts[2]);
+      const angleDeg=computeAngle(anglePts[0],anglePts[1],anglePts[2],anglePlane);
       const suppDeg=180-angleDeg;
       const arcR=Math.min(anglePts[0].distanceTo(anglePts[1]),anglePts[0].distanceTo(anglePts[2]))*0.4;
       const arm2L=new THREE.Line(new THREE.BufferGeometry().setFromPoints([anglePts[0],anglePts[2]]),new THREE.LineBasicMaterial({color:0x5E35B1}));
       scene.add(arm2L);angleMarkers.push(arm2L);
-      const ag=makeAngleArc(anglePts[0],anglePts[1],anglePts[2],arcR);
+      const ag=makeAngleArc(anglePts[0],anglePts[1],anglePts[2],arcR,anglePlane);
       if(ag){const al=new THREE.Line(ag,new THREE.LineBasicMaterial({color:0x5E35B1}));scene.add(al);angleMarkers.push(al);}
       measureCount++;
       const objs=[...angleMarkers];angleMarkers=[];
@@ -1525,6 +1507,21 @@ document.getElementById('btn-dlock').addEventListener('click',()=>{
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
 document.getElementById('btn-angle').addEventListener('click',()=>setMode('angle'));
+function setAnglePlane(p){
+  anglePlane=anglePlane===p?'FREE':p;
+  ['xy','xz','yz'].forEach(id=>{
+    const el=document.getElementById('btn-a'+id);
+    if(el){el.classList.remove('active');el.setAttribute('aria-pressed','false');}
+  });
+  if(anglePlane!=='FREE'){
+    const el=document.getElementById('btn-a'+p.toLowerCase());
+    if(el){el.classList.add('active');el.setAttribute('aria-pressed','true');}
+  }
+  announce(anglePlane==='FREE'?'Angle: free 3D mode':'Angle locked to '+anglePlane+' plane — click 3 points from any view');
+}
+document.getElementById('btn-axy').addEventListener('click',()=>setAnglePlane('XY'));
+document.getElementById('btn-axz').addEventListener('click',()=>setAnglePlane('XZ'));
+document.getElementById('btn-ayz').addEventListener('click',()=>setAnglePlane('YZ'));
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-clear-all').addEventListener('click',()=>{
