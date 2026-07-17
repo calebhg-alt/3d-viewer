@@ -107,6 +107,8 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn" id="btn-pan" aria-pressed="false" aria-label="Pan mode"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Pan</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
+    <button class="tb-btn" id="btn-hlock" aria-pressed="false" aria-label="Lock linear measurement to horizontal" title="After clicking Linear, this locks the measurement to horizontal only"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H</button>
+    <button class="tb-btn" id="btn-vlock" aria-pressed="false" aria-label="Lock linear measurement to vertical" title="After clicking Linear, this locks the measurement to vertical only"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V</button>
     <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — 3 points on curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
     <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
     <button class="tb-btn" id="btn-locate" aria-pressed="false" aria-label="Locate — click 2 points to get horizontal, vertical and total distance"><i class="ti ti-crosshair" style="font-size:14px;" aria-hidden="true"></i>Locate</button>
@@ -346,6 +348,7 @@ let radialPts=[],radialMarkers=[],radialPreview=null;
 let anglePts=[],angleMarkers=[];
 let circleCenters=[],centerlineSegs=[];
 let locPt1=null,locMarker1=null,locPreview=null;
+let linearLock='none'; // 'none' | 'h' | 'v'  — locks linear to H or V axis
 let hvPt1=null,hvMarker1=null,hvPreview=null; // shared state for H-Dim and V-Dim
 let hDimPt1=null,hDimMarker1=null;
 let vDimPt1=null,vDimMarker1=null;
@@ -865,7 +868,19 @@ canvas.addEventListener('mousemove',e=>{
 
   if(measureMode==='linear'&&linearPt1){
     if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
-    linearPreview=new THREE.Line(new THREE.BufferGeometry().setFromPoints([linearPt1,hitPt]),new THREE.LineBasicMaterial({color:0x2B6A82}));
+    let previewEnd=hitPt.clone();
+    if(linearLock!=='none'){
+      const cR=new THREE.Vector3(),cU=new THREE.Vector3();
+      camera.matrix.extractBasis(cR,cU,new THREE.Vector3());
+      cR.normalize();cU.normalize();
+      const diff=new THREE.Vector3().subVectors(hitPt,linearPt1);
+      const axis=linearLock==='h'?cR:cU;
+      previewEnd=linearPt1.clone().addScaledVector(axis,diff.dot(axis));
+    }
+    linearPreview=new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([linearPt1,previewEnd]),
+      new THREE.LineBasicMaterial({color:linearLock==='none'?0x2B6A82:0x2E7D32})
+    );
     scene.add(linearPreview);
   }
   if(measureMode==='radial'&&radialPts.length>=2){
@@ -922,14 +937,37 @@ canvas.addEventListener('click',e=>{
       linearMarker1=makeSphere(linearPt1,0x2B6A82);scene.add(linearMarker1);
       measureHint.textContent='Click point 2';announce('Point 1 set.');
     }else{
-      const dist=linearPt1.distanceTo(hitPt);
       if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
       if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
-      const sA=makeSphere(linearPt1,0x2B6A82),sB=makeSphere(hitPt,0x2B6A82);
-      const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([linearPt1,hitPt]),new THREE.LineBasicMaterial({color:0x2B6A82}));
+      // Apply lock: constrain endpoint to H or V screen axis
+      let pt2=hitPt.clone();
+      let lockLabel='';
+      if(linearLock!=='none'){
+        const cR=new THREE.Vector3(),cU=new THREE.Vector3();
+        camera.matrix.extractBasis(cR,cU,new THREE.Vector3());
+        cR.normalize();cU.normalize();
+        const diff=new THREE.Vector3().subVectors(hitPt,linearPt1);
+        const axis=linearLock==='h'?cR:cU;
+        pt2=linearPt1.clone().addScaledVector(axis,diff.dot(axis));
+        lockLabel=' ['+(linearLock==='h'?'H-Lock':'V-Lock')+']';
+      }
+      const dist=linearPt1.distanceTo(pt2);
+      const col=linearLock==='none'?0x2B6A82:0x2E7D32;
+      const sA=makeSphere(linearPt1,col),sB=makeSphere(pt2,col);
+      const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([linearPt1,pt2]),new THREE.LineBasicMaterial({color:col}));
+      // If locked, also show dashed guide from snap to locked endpoint
+      const objs=[sA,sB,line];
+      if(linearLock!=='none'&&pt2.distanceTo(hitPt)>0.0001){
+        const dMat=new THREE.LineDashedMaterial({color:col,dashSize:modelSize*0.03,gapSize:modelSize*0.015});
+        const guide=new THREE.Line(new THREE.BufferGeometry().setFromPoints([hitPt,pt2]),dMat);
+        guide.computeLineDistances();
+        scene.add(guide);objs.push(guide);
+        const sSnap=makeSphere(hitPt,0x00BCD4,modelSize*0.012);
+        scene.add(sSnap);objs.push(sSnap);
+      }
       scene.add(sA);scene.add(sB);scene.add(line);
-      measureCount++;addRow(measureCount,'linear','Distance: '+dist.toFixed(4)+' units',[sA,sB,line]);
-      announce('Linear: '+dist.toFixed(4)+' units.');
+      measureCount++;addRow(measureCount,'linear','Distance: '+dist.toFixed(4)+' units'+lockLabel,[...objs]);
+      announce('Linear'+lockLabel+': '+dist.toFixed(4)+' units.');
       linearPt1=null;measureHint.textContent='Click point 1';
     }
   }
@@ -1162,6 +1200,20 @@ document.getElementById('btn-iso3').addEventListener('click',()=>setIso(45));
 document.getElementById('btn-rotate').addEventListener('click',()=>{document.getElementById('btn-rotate').setAttribute('aria-pressed','true');document.getElementById('btn-rotate').classList.add('active');document.getElementById('btn-pan').setAttribute('aria-pressed','false');document.getElementById('btn-pan').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Rotate mode.');});
 document.getElementById('btn-pan').addEventListener('click',()=>{document.getElementById('btn-pan').setAttribute('aria-pressed','true');document.getElementById('btn-pan').classList.add('active');document.getElementById('btn-rotate').setAttribute('aria-pressed','false');document.getElementById('btn-rotate').classList.remove('active');if(!measureMode){controls.enabled=true;controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};}announce('Pan mode.');});
 document.getElementById('btn-linear').addEventListener('click',()=>setMode('linear'));
+document.getElementById('btn-hlock').addEventListener('click',()=>{
+  linearLock=linearLock==='h'?'none':'h';
+  document.getElementById('btn-hlock').classList.toggle('active',linearLock==='h');
+  document.getElementById('btn-hlock').setAttribute('aria-pressed',String(linearLock==='h'));
+  if(linearLock==='h'){linearLock='h';document.getElementById('btn-vlock').classList.remove('active');document.getElementById('btn-vlock').setAttribute('aria-pressed','false');}
+  announce(linearLock==='h'?'H-Lock ON — linear measures horizontal only':'H-Lock OFF');
+});
+document.getElementById('btn-vlock').addEventListener('click',()=>{
+  linearLock=linearLock==='v'?'none':'v';
+  document.getElementById('btn-vlock').classList.toggle('active',linearLock==='v');
+  document.getElementById('btn-vlock').setAttribute('aria-pressed',String(linearLock==='v'));
+  if(linearLock==='v'){document.getElementById('btn-hlock').classList.remove('active');document.getElementById('btn-hlock').setAttribute('aria-pressed','false');}
+  announce(linearLock==='v'?'V-Lock ON — linear measures vertical only':'V-Lock OFF');
+});
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
 document.getElementById('btn-angle').addEventListener('click',()=>setMode('angle'));
@@ -1187,8 +1239,12 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='l'||e.key==='L')setMode('linear');
     else if(e.key==='c'||e.key==='C')setMode('radial');
     else if(e.key==='a'||e.key==='A')setMode('angle');
-    else if(e.key==='g'||e.key==='G')setMode('locate');else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
     else if(e.key==='g'||e.key==='G')setMode('locate');
+    else if(e.key==='h'||e.key==='H'){document.getElementById('btn-hlock').click();}
+    else if(e.key==='v'||e.key==='V'){document.getElementById('btn-vlock').click();}else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
+    else if(e.key==='g'||e.key==='G')setMode('locate');
+    else if(e.key==='h'||e.key==='H'){document.getElementById('btn-hlock').click();}
+    else if(e.key==='v'||e.key==='V'){document.getElementById('btn-vlock').click();}
     else if(e.key==='1'||e.code==='Digit1')setView('front');else if(e.key==='2'||e.code==='Digit2')setView('back');
     else if(e.key==='3'||e.code==='Digit3')setView('right');else if(e.key==='4'||e.code==='Digit4')setView('left');
     else if(e.key==='5'||e.code==='Digit5')setView('top');else if(e.key==='6'||e.code==='Digit6')setView('bottom');
