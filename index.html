@@ -377,66 +377,69 @@ function resize(){
 resize();new ResizeObserver(resize).observe(viewport);
 
 // ── XYZ Axis Indicator ────────────────────────────────────────────────────
-const axisCanvas=document.getElementById('axis-canvas');
-const axisCtx=axisCanvas.getContext('2d');
-const axisScene=new THREE.Scene();
-const axisCamera2=new THREE.PerspectiveCamera(50,1,0.1,100);
-axisCamera2.position.set(0,0,3);
-const axisRenderer=new THREE.WebGLRenderer({canvas:axisCanvas,antialias:true,alpha:true});
-axisRenderer.setPixelRatio(window.devicePixelRatio);
-axisRenderer.setSize(90,90);
-axisRenderer.setClearColor(0x000000,0);
+let axisRenderer2=null,axisScene2=null,axisCamera2=null,axisCtx2=null;
+try{
+  const axisCanvas=document.getElementById('axis-canvas');
+  axisCtx2=axisCanvas.getContext('2d');
+  axisScene2=new THREE.Scene();
+  axisCamera2=new THREE.PerspectiveCamera(50,1,0.1,100);
+  axisCamera2.position.set(0,0,2.5);
+  axisRenderer2=new THREE.WebGLRenderer({canvas:axisCanvas,antialias:true,alpha:true});
+  axisRenderer2.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  axisRenderer2.setSize(90,90);
+  axisRenderer2.setClearColor(0x000000,0);
+  // Axis lines
+  function makeAL(dir,color){
+    const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(0.75)]);
+    return new THREE.Line(geo,new THREE.LineBasicMaterial({color}));
+  }
+  axisScene2.add(makeAL(new THREE.Vector3(1,0,0),0xFF4444));
+  axisScene2.add(makeAL(new THREE.Vector3(0,1,0),0x44FF44));
+  axisScene2.add(makeAL(new THREE.Vector3(0,0,1),0x4499FF));
+  // Arrowheads
+  function makeAH(dir,color){
+    const geo=new THREE.ConeGeometry(0.055,0.18,8);
+    const mat=new THREE.MeshBasicMaterial({color});
+    const m=new THREE.Mesh(geo,mat);
+    m.position.copy(dir.clone().multiplyScalar(0.84));
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+    return m;
+  }
+  axisScene2.add(makeAH(new THREE.Vector3(1,0,0),0xFF4444));
+  axisScene2.add(makeAH(new THREE.Vector3(0,1,0),0x44FF44));
+  axisScene2.add(makeAH(new THREE.Vector3(0,0,1),0x4499FF));
+  console.log('XYZ axis indicator ready');
+}catch(e){console.warn('Axis indicator failed:',e);}
 
-// Build XYZ axis lines manually for full control
-function makeAxisLine(dir,color){
-  const mat=new THREE.LineBasicMaterial({color,linewidth:3});
-  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(0.8)]);
-  return new THREE.Line(geo,mat);
-}
-const axX=makeAxisLine(new THREE.Vector3(1,0,0),0xFF3333); // X = red
-const axY=makeAxisLine(new THREE.Vector3(0,1,0),0x33FF33); // Y = green
-const axZ=makeAxisLine(new THREE.Vector3(0,0,1),0x3399FF); // Z = blue
-axisScene.add(axX);axisScene.add(axY);axisScene.add(axZ);
-
-// Cone arrowheads
-function makeArrowHead(dir,color){
-  const geo=new THREE.ConeGeometry(0.06,0.2,8);
-  const mat=new THREE.MeshBasicMaterial({color});
-  const mesh=new THREE.Mesh(geo,mat);
-  mesh.position.copy(dir.clone().multiplyScalar(0.9));
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
-  return mesh;
-}
-axisScene.add(makeArrowHead(new THREE.Vector3(1,0,0),0xFF3333));
-axisScene.add(makeArrowHead(new THREE.Vector3(0,1,0),0x33FF33));
-axisScene.add(makeArrowHead(new THREE.Vector3(0,0,1),0x3399FF));
-
-// Labels rendered on the 2D canvas overlay after Three renders
-function drawAxisLabels(){
-  axisCtx.clearRect(0,0,90,90);
-  // Project each axis tip to screen space
-  const tips=[
-    {pos:new THREE.Vector3(1.1,0,0),label:'X',color:'#FF5555'},
-    {pos:new THREE.Vector3(0,1.1,0),label:'Y',color:'#55FF55'},
-    {pos:new THREE.Vector3(0,0,1.1),label:'Z',color:'#55AAFF'},
-  ];
-  tips.forEach(({pos,label,color})=>{
+function drawAxisLabels2(){
+  if(!axisCtx2||!axisCamera2) return;
+  axisCtx2.clearRect(0,0,90,90);
+  [{pos:new THREE.Vector3(1.05,0,0),label:'X',color:'#FF6666'},
+   {pos:new THREE.Vector3(0,1.05,0),label:'Y',color:'#66FF66'},
+   {pos:new THREE.Vector3(0,0,1.05),label:'Z',color:'#66AAFF'}
+  ].forEach(({pos,label,color})=>{
     const v=pos.clone().project(axisCamera2);
-    const x=(v.x+1)/2*90;
-    const y=(-v.y+1)/2*90;
-    axisCtx.font='bold 13px system-ui';
-    axisCtx.fillStyle=color;
-    axisCtx.textAlign='center';
-    axisCtx.textBaseline='middle';
-    axisCtx.fillText(label,x,y);
+    const x=(v.x+1)/2*90,y=(-v.y+1)/2*90;
+    axisCtx2.font='bold 13px system-ui';
+    axisCtx2.fillStyle=color;
+    axisCtx2.textAlign='center';
+    axisCtx2.textBaseline='middle';
+    axisCtx2.fillText(label,x,y);
   });
 }
 
-(function loop(){requestAnimationFrame(loop);controls.update();if(isOrtho)syncOrtho();renderer.render(scene,isOrtho?orthoCamera:camera);
-  // Sync axis indicator rotation to main camera
-  axisCamera2.quaternion.copy(camera.quaternion);
-  axisRenderer.render(axisScene,axisCamera2);
-  drawAxisLabels();
+(function loop(){
+  requestAnimationFrame(loop);
+  controls.update();
+  if(isOrtho)syncOrtho();
+  renderer.render(scene,isOrtho?orthoCamera:camera);
+  if(axisRenderer2&&axisCamera2&&axisScene2){
+    try{
+      axisCamera2.quaternion.copy(camera.quaternion);
+      axisRenderer2.render(axisScene2,axisCamera2);
+      drawAxisLabels2();
+    }catch(e){}
+  }
 })();
 
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
@@ -1049,7 +1052,7 @@ canvas.addEventListener('click',e=>{
       const{center,radius,normal,ax,ay}=c;
       const diam=radius*2,circ=Math.PI*diam;
       const circLine=new THREE.Line(makeCircleGeom(center,radius,normal,128),new THREE.LineBasicMaterial({color:0xC4721A}));
-      const centerDot=makeSphere(center,0xC4721A,modelSize*0.022);
+      const centerDot=makeSphere(center,0x00E5FF,modelSize*0.025);
       // Crossing centerlines — always world-axis aligned
       // Pick the two world axes most perpendicular to the circle normal
       const clLen=radius*1.6;
@@ -1058,11 +1061,14 @@ canvas.addEventListener('click',e=>{
       const sorted=worldAxes.slice().sort((a,b)=>Math.abs(normal.dot(a))-Math.abs(normal.dot(b)));
       const clAx1=sorted[0]; // most perpendicular = horizontal in the circle plane
       const clAx2=sorted[1]; // second most perpendicular = vertical in the circle plane
-      const clMat1=new THREE.LineDashedMaterial({color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06});
-      const clMat2=new THREE.LineDashedMaterial({color:0xC4721A,dashSize:radius*0.12,gapSize:radius*0.06});
-      const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx1,-clLen),center.clone().addScaledVector(clAx1,clLen)]),clMat1);
+      // Bright cyan centerlines for high contrast
+      const clColor=0x00E5FF;
+      const clLen2=clLen*1.4;
+      const clMat1=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.18,gapSize:radius*0.05});
+      const clMat2=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.18,gapSize:radius*0.05});
+      const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx1,-clLen2),center.clone().addScaledVector(clAx1,clLen2)]),clMat1);
       clH.computeLineDistances();
-      const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx2,-clLen),center.clone().addScaledVector(clAx2,clLen)]),clMat2);
+      const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx2,-clLen2),center.clone().addScaledVector(clAx2,clLen2)]),clMat2);
       clV.computeLineDistances();
       scene.add(circLine);scene.add(centerDot);scene.add(clH);scene.add(clV);scene.add(clDot);
       // Store snap data
