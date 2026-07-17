@@ -1143,46 +1143,49 @@ canvas.addEventListener('click',e=>{
       if(!c){announce('Points are collinear. Try again.');cancelMeasure();measureHint.textContent='Click point 1 of 3';return;}
       const{center,radius,normal,ax,ay}=c;
       const diam=radius*2,circ=Math.PI*diam;
+      // Circle outline
       const circLine=new THREE.Line(makeCircleGeom(center,radius,normal,128),new THREE.LineBasicMaterial({color:0xC4721A}));
+      // Center dot
       const centerDot=makeSphere(center,0xFF6B00,modelSize*0.028);
-      // Crossing centerlines — always world-axis aligned
-      // Pick the two world axes most perpendicular to the circle normal
-      const clLen=radius*1.6;
+      // Pick two world axes most perpendicular to circle normal for centerlines
+      const clLen=radius*2.4;
       const worldAxes=[new THREE.Vector3(1,0,0),new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,1)];
-      // Sort by how perpendicular they are to the normal (smallest dot product = most perpendicular)
       const sorted=worldAxes.slice().sort((a,b)=>Math.abs(normal.dot(a))-Math.abs(normal.dot(b)));
-      const clAx1=sorted[0]; // most perpendicular = horizontal in the circle plane
-      const clAx2=sorted[1]; // second most perpendicular = vertical in the circle plane
-      // Bright cyan centerlines for high contrast
-      const clColor=0xCC0000; // deep red — standard engineering centerline color, high contrast on gray
-      const clLen2=clLen*1.4;
-      const clMat1=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.22,gapSize:radius*0.03});
-      const clMat2=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.22,gapSize:radius*0.03});
+      const clAx1=sorted[0];
+      const clAx2=sorted[1];
+      // Define endpoints FIRST before using them
+      const clEnd1a=center.clone().addScaledVector(clAx1,-clLen);
+      const clEnd1b=center.clone().addScaledVector(clAx1, clLen);
+      const clEnd2a=center.clone().addScaledVector(clAx2,-clLen);
+      const clEnd2b=center.clone().addScaledVector(clAx2, clLen);
       // Black background lines for contrast
-      const clBgMat=new THREE.LineBasicMaterial({color:0x000000});
-      const clHbg=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx1,-clLen2),center.clone().addScaledVector(clAx1,clLen2)]),clBgMat);
-      const clVbg=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx2,-clLen2),center.clone().addScaledVector(clAx2,clLen2)]),clBgMat);
-      // Red dashed centerlines on top
-      const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx1,-clLen2),center.clone().addScaledVector(clAx1,clLen2)]),clMat1);
+      const clBgMat=new THREE.LineBasicMaterial({color:0x111111});
+      const clHbg=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd1a,clEnd1b]),clBgMat);
+      const clVbg=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd2a,clEnd2b]),clBgMat);
+      // Deep red dashed centerlines on top
+      const clColor=0xCC0000;
+      const clMat1=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.25,gapSize:radius*0.04});
+      const clMat2=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.25,gapSize:radius*0.04});
+      const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd1a,clEnd1b]),clMat1);
       clH.computeLineDistances();
-      const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx2,-clLen2),center.clone().addScaledVector(clAx2,clLen2)]),clMat2);
+      const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([clEnd2a,clEnd2b]),clMat2);
       clV.computeLineDistances();
-      // Endpoint tick marks (perpendicular cross at each tip)
+      // Tick marks at each endpoint
       const epMat=new THREE.LineBasicMaterial({color:clColor});
       const epSz=modelSize*0.025;
       function mkEP(pt,ax){return new THREE.Line(new THREE.BufferGeometry().setFromPoints([pt.clone().addScaledVector(ax,-epSz),pt.clone().addScaledVector(ax,epSz)]),epMat);}
       const ep1=mkEP(clEnd1a,clAx2);const ep2=mkEP(clEnd1b,clAx2);
       const ep3=mkEP(clEnd2a,clAx1);const ep4=mkEP(clEnd2b,clAx1);
-      scene.add(circLine);scene.add(centerDot);scene.add(clHbg);scene.add(clVbg);scene.add(clH);scene.add(clV);scene.add(clDot);scene.add(ep1);scene.add(ep2);scene.add(ep3);scene.add(ep4);
+      // Add all to scene
+      scene.add(circLine);scene.add(centerDot);
+      scene.add(clHbg);scene.add(clVbg);
+      scene.add(clH);scene.add(clV);
+      scene.add(ep1);scene.add(ep2);scene.add(ep3);scene.add(ep4);
       // Store snap data
       circleCenters.push(center.clone());
-      const clEnd1a=center.clone().addScaledVector(clAx1,-clLen2);
-      const clEnd1b=center.clone().addScaledVector(clAx1, clLen2);
-      const clEnd2a=center.clone().addScaledVector(clAx2,-clLen2);
-      const clEnd2b=center.clone().addScaledVector(clAx2, clLen2);
-      centerlineSegs.push({p1:clEnd1a,p2:clEnd1b,endpoints:[clEnd1a.clone(),clEnd1b.clone()]});
-      centerlineSegs.push({p1:clEnd2a,p2:clEnd2b,endpoints:[clEnd2a.clone(),clEnd2b.clone()]});
-      const objs=[circLine,centerDot,clHbg,clVbg,clH,clV,clDot,ep1,ep2,ep3,ep4,...radialMarkers];
+      centerlineSegs.push({p1:clEnd1a.clone(),p2:clEnd1b.clone(),endpoints:[clEnd1a.clone(),clEnd1b.clone()]});
+      centerlineSegs.push({p1:clEnd2a.clone(),p2:clEnd2b.clone(),endpoints:[clEnd2a.clone(),clEnd2b.clone()]});
+      const objs=[circLine,centerDot,clHbg,clVbg,clH,clV,ep1,ep2,ep3,ep4,...radialMarkers];
       radialMarkers=[];
       measureCount++;
       addRow(measureCount,'radial','r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4),[...objs]);
