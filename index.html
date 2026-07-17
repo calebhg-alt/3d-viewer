@@ -202,8 +202,8 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
       <p style="color:white;font-size:14px;margin:0;">Loading model…</p>
     </div>
     <div style="position:absolute;bottom:8px;right:10px;font-size:11px;color:rgba(255,255,255,0.22);pointer-events:none;" aria-hidden="true">scroll=zoom · right-drag=rotate</div>
-    <div style="position:absolute;bottom:8px;left:10px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
-    <canvas id="axis-canvas" width="90" height="90" style="position:absolute;bottom:40px;left:10px;pointer-events:none;" aria-hidden="true"></canvas>
+    <div style="position:absolute;bottom:8px;left:120px;font-size:11px;color:rgba(255,255,255,0.4);pointer-events:none;font-style:italic;" aria-hidden="true">Created by: Caleb Healey</div>
+    <canvas id="axis-canvas" width="100" height="100" style="position:absolute;bottom:10px;left:10px;pointer-events:none;border-radius:50%;background:rgba(0,0,0,0.4);" aria-hidden="true"></canvas>
   </div>
 
   <div id="status-bar" role="status" aria-live="polite" aria-atomic="true">Ready. Select a model to begin.</div>
@@ -376,56 +376,71 @@ function resize(){
 }
 resize();new ResizeObserver(resize).observe(viewport);
 
-// ── XYZ Axis Indicator ────────────────────────────────────────────────────
-let axisRenderer2=null,axisScene2=null,axisCamera2=null,axisCtx2=null;
+// ── XYZ Axis Indicator (2D canvas, no WebGL conflict) ─────────────────────
+let axisCanvas2d=null,axisCtx2=null;
 try{
-  const axisCanvas=document.getElementById('axis-canvas');
-  axisCtx2=axisCanvas.getContext('2d');
-  axisScene2=new THREE.Scene();
-  axisCamera2=new THREE.PerspectiveCamera(50,1,0.1,100);
-  axisCamera2.position.set(0,0,2.5);
-  axisRenderer2=new THREE.WebGLRenderer({canvas:axisCanvas,antialias:true,alpha:true});
-  axisRenderer2.setPixelRatio(Math.min(window.devicePixelRatio,2));
-  axisRenderer2.setSize(90,90);
-  axisRenderer2.setClearColor(0x000000,0);
-  // Axis lines
-  function makeAL(dir,color){
-    const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(0.75)]);
-    return new THREE.Line(geo,new THREE.LineBasicMaterial({color}));
-  }
-  axisScene2.add(makeAL(new THREE.Vector3(1,0,0),0xFF4444));
-  axisScene2.add(makeAL(new THREE.Vector3(0,1,0),0x44FF44));
-  axisScene2.add(makeAL(new THREE.Vector3(0,0,1),0x4499FF));
-  // Arrowheads
-  function makeAH(dir,color){
-    const geo=new THREE.ConeGeometry(0.055,0.18,8);
-    const mat=new THREE.MeshBasicMaterial({color});
-    const m=new THREE.Mesh(geo,mat);
-    m.position.copy(dir.clone().multiplyScalar(0.84));
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
-    return m;
-  }
-  axisScene2.add(makeAH(new THREE.Vector3(1,0,0),0xFF4444));
-  axisScene2.add(makeAH(new THREE.Vector3(0,1,0),0x44FF44));
-  axisScene2.add(makeAH(new THREE.Vector3(0,0,1),0x4499FF));
-  console.log('XYZ axis indicator ready');
-}catch(e){console.warn('Axis indicator failed:',e);}
+  axisCanvas2d=document.getElementById('axis-canvas');
+  axisCtx2=axisCanvas2d.getContext('2d');
+}catch(e){console.warn('Axis canvas init failed:',e);}
 
-function drawAxisLabels2(){
-  if(!axisCtx2||!axisCamera2) return;
-  axisCtx2.clearRect(0,0,90,90);
-  [{pos:new THREE.Vector3(1.05,0,0),label:'X',color:'#FF6666'},
-   {pos:new THREE.Vector3(0,1.05,0),label:'Y',color:'#66FF66'},
-   {pos:new THREE.Vector3(0,0,1.05),label:'Z',color:'#66AAFF'}
-  ].forEach(({pos,label,color})=>{
-    const v=pos.clone().project(axisCamera2);
-    const x=(v.x+1)/2*90,y=(-v.y+1)/2*90;
-    axisCtx2.font='bold 13px system-ui';
-    axisCtx2.fillStyle=color;
+function drawAxisIndicator(){
+  camera.updateMatrixWorld();
+  if(!axisCtx2) return;
+  const W=100,H=100,cx=50,cy=50,len=34;
+  axisCtx2.clearRect(0,0,W,H);
+  // Semi-transparent background
+  axisCtx2.fillStyle='rgba(10,20,35,0.6)';
+  axisCtx2.beginPath();axisCtx2.arc(cx,cy,48,0,Math.PI*2);axisCtx2.fill();
+  // Get camera rotation matrix to project world axes to 2D
+  const m=camera.matrixWorldInverse;
+  function project(x,y,z){
+    // Manual matrix-vector multiply for 3x3 rotation only
+    const rx=m.elements[0]*x+m.elements[4]*y+m.elements[8]*z;
+    const ry=m.elements[1]*x+m.elements[5]*y+m.elements[9]*z;
+    return{x:cx+rx*len,y:cy-ry*len};
+  }
+  const axes=[
+    {dir:[1,0,0],color:'#FF5555',label:'X'},
+    {dir:[0,1,0],color:'#55FF55',label:'Y'},
+    {dir:[0,0,1],color:'#5599FF',label:'Z'},
+  ];
+  // Draw in back-to-front order based on z depth
+  const withDepth=axes.map(a=>{
+    const rx=m.elements[0]*a.dir[0]+m.elements[4]*a.dir[1]+m.elements[8]*a.dir[2];
+    const ry=m.elements[1]*a.dir[0]+m.elements[5]*a.dir[1]+m.elements[9]*a.dir[2];
+    const rz=m.elements[2]*a.dir[0]+m.elements[6]*a.dir[1]+m.elements[10]*a.dir[2];
+    return{...a,rx,ry,rz};
+  }).sort((a,b)=>a.rz-b.rz); // draw back axes first
+  withDepth.forEach(ax=>{
+    const tip=project(ax.dir[0],ax.dir[1],ax.dir[2]);
+    axisCtx2.beginPath();
+    axisCtx2.moveTo(cx,cy);
+    axisCtx2.lineTo(tip.x,tip.y);
+    axisCtx2.strokeStyle=ax.color;
+    axisCtx2.lineWidth=ax.rz>0?2.5:1.5; // thicker if facing camera
+    axisCtx2.globalAlpha=ax.rz>0?1:0.45;
+    axisCtx2.stroke();
+    // Arrowhead
+    const ang=Math.atan2(tip.y-cy,tip.x-cx);
+    axisCtx2.beginPath();
+    axisCtx2.moveTo(tip.x,tip.y);
+    axisCtx2.lineTo(tip.x-8*Math.cos(ang-0.4),tip.y-8*Math.sin(ang-0.4));
+    axisCtx2.lineTo(tip.x-8*Math.cos(ang+0.4),tip.y-8*Math.sin(ang+0.4));
+    axisCtx2.closePath();
+    axisCtx2.fillStyle=ax.color;
+    axisCtx2.fill();
+    // Label
+    axisCtx2.font='bold 11px system-ui';
+    axisCtx2.fillStyle=ax.color;
+    axisCtx2.globalAlpha=ax.rz>0?1:0.45;
     axisCtx2.textAlign='center';
     axisCtx2.textBaseline='middle';
-    axisCtx2.fillText(label,x,y);
+    axisCtx2.fillText(ax.label,tip.x+(tip.x-cx)*0.22,tip.y+(tip.y-cy)*0.22);
   });
+  axisCtx2.globalAlpha=1;
+  // Center dot
+  axisCtx2.beginPath();axisCtx2.arc(cx,cy,3,0,Math.PI*2);
+  axisCtx2.fillStyle='white';axisCtx2.fill();
 }
 
 (function loop(){
@@ -433,13 +448,7 @@ function drawAxisLabels2(){
   controls.update();
   if(isOrtho)syncOrtho();
   renderer.render(scene,isOrtho?orthoCamera:camera);
-  if(axisRenderer2&&axisCamera2&&axisScene2){
-    try{
-      axisCamera2.quaternion.copy(camera.quaternion);
-      axisRenderer2.render(axisScene2,axisCamera2);
-      drawAxisLabels2();
-    }catch(e){}
-  }
+  try{drawAxisIndicator();}catch(e){}
 })();
 
 canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY>0?1.12:0.89;const v=new THREE.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);camera.position.copy(controls.target).add(v);controls.update();},{passive:false});
@@ -1052,7 +1061,7 @@ canvas.addEventListener('click',e=>{
       const{center,radius,normal,ax,ay}=c;
       const diam=radius*2,circ=Math.PI*diam;
       const circLine=new THREE.Line(makeCircleGeom(center,radius,normal,128),new THREE.LineBasicMaterial({color:0xC4721A}));
-      const centerDot=makeSphere(center,0x00E5FF,modelSize*0.025);
+      const centerDot=makeSphere(center,0xFF6B00,modelSize*0.028);
       // Crossing centerlines — always world-axis aligned
       // Pick the two world axes most perpendicular to the circle normal
       const clLen=radius*1.6;
@@ -1062,10 +1071,10 @@ canvas.addEventListener('click',e=>{
       const clAx1=sorted[0]; // most perpendicular = horizontal in the circle plane
       const clAx2=sorted[1]; // second most perpendicular = vertical in the circle plane
       // Bright cyan centerlines for high contrast
-      const clColor=0x00E5FF;
+      const clColor=0xFF4500; // bright orange-red for maximum contrast on light gray models
       const clLen2=clLen*1.4;
-      const clMat1=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.18,gapSize:radius*0.05});
-      const clMat2=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.18,gapSize:radius*0.05});
+      const clMat1=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.22,gapSize:radius*0.03});
+      const clMat2=new THREE.LineDashedMaterial({color:clColor,dashSize:radius*0.22,gapSize:radius*0.03});
       const clH=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx1,-clLen2),center.clone().addScaledVector(clAx1,clLen2)]),clMat1);
       clH.computeLineDistances();
       const clV=new THREE.Line(new THREE.BufferGeometry().setFromPoints([center.clone().addScaledVector(clAx2,-clLen2),center.clone().addScaledVector(clAx2,clLen2)]),clMat2);
@@ -1080,7 +1089,15 @@ canvas.addEventListener('click',e=>{
       measureCount++;
       addRow(measureCount,'radial','r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4),[...objs]);
       announce('Radial: r='+radius.toFixed(4)+' d='+diam.toFixed(4)+' c='+circ.toFixed(4));
-      radialPts=[];measureHint.textContent='Click point 1 of 3';
+      radialPts=[];
+      // Exit radial mode — return to rotate
+      measureMode=null;
+      controls.enabled=true;
+      measureHint.style.display='none';
+      ['linear','radial','angle','locate'].forEach(b=>{
+        const el=document.getElementById('btn-'+b);
+        if(el){el.setAttribute('aria-pressed','false');el.classList.remove('active');}
+      });
     }
   }
 
@@ -1209,7 +1226,9 @@ canvas.addEventListener('click',e=>{
       const objs=[...angleMarkers];angleMarkers=[];
       addRow(measureCount,'angle',angleDeg.toFixed(2)+'°  (supp: '+suppDeg.toFixed(2)+'°)',objs);
       announce('Angle: '+angleDeg.toFixed(2)+'° — supplementary: '+suppDeg.toFixed(2)+'°');
-      anglePts=[];measureHint.textContent='Click vertex point';
+      anglePts=[];
+      measureMode=null;controls.enabled=true;measureHint.style.display='none';
+      ['linear','radial','angle','locate'].forEach(b=>{const el=document.getElementById('btn-'+b);if(el){el.setAttribute('aria-pressed','false');el.classList.remove('active');}});
     }
   }
 
@@ -1293,7 +1312,11 @@ document.getElementById('btn-radial').addEventListener('click',()=>setMode('radi
 document.getElementById('btn-angle').addEventListener('click',()=>setMode('angle'));
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
-document.getElementById('btn-clear-all').addEventListener('click',()=>{clearAll();cancelMeasure();announce('Cleared.');});
+document.getElementById('btn-clear-all').addEventListener('click',()=>{
+  clearAll();cancelMeasure();
+  if(measureMode){setMode(measureMode);} // toggle off current mode
+  announce('All measurements cleared.');
+});
 document.getElementById('btn-kbd').addEventListener('click',()=>{const p=document.getElementById('kbd-panel');const open=p.classList.toggle('open');document.getElementById('btn-kbd').setAttribute('aria-expanded',String(open));});
 
 // ── Keyboard ──────────────────────────────────────────────────────────────────
