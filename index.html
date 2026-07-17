@@ -870,12 +870,16 @@ canvas.addEventListener('mousemove',e=>{
     if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
     let previewEnd=hitPt.clone();
     if(linearLock!=='none'){
-      const cR=new THREE.Vector3(),cU=new THREE.Vector3();
-      camera.matrix.extractBasis(cR,cU,new THREE.Vector3());
-      cR.normalize();cU.normalize();
-      const diff=new THREE.Vector3().subVectors(hitPt,linearPt1);
+      const cR=new THREE.Vector3(),cU=new THREE.Vector3(),cF=new THREE.Vector3();
+      camera.matrix.extractBasis(cR,cU,cF);
+      cR.normalize();cU.normalize();cF.normalize();
+      // Project onto plane through p1 facing camera first
+      const toSnap=new THREE.Vector3().subVectors(hitPt,linearPt1);
+      const depthOff=toSnap.dot(cF);
+      const onPlane=hitPt.clone().addScaledVector(cF,-depthOff);
+      const diffOnPlane=new THREE.Vector3().subVectors(onPlane,linearPt1);
       const axis=linearLock==='h'?cR:cU;
-      previewEnd=linearPt1.clone().addScaledVector(axis,diff.dot(axis));
+      previewEnd=linearPt1.clone().addScaledVector(axis,diffOnPlane.dot(axis));
     }
     linearPreview=new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([linearPt1,previewEnd]),
@@ -940,15 +944,23 @@ canvas.addEventListener('click',e=>{
       if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
       if(linearMarker1){scene.remove(linearMarker1);linearMarker1=null;}
       // Apply lock: constrain endpoint to H or V screen axis
+      // AND project snap point onto the plane through p1 facing the camera
+      // so both points share the same depth plane
       let pt2=hitPt.clone();
       let lockLabel='';
       if(linearLock!=='none'){
-        const cR=new THREE.Vector3(),cU=new THREE.Vector3();
-        camera.matrix.extractBasis(cR,cU,new THREE.Vector3());
-        cR.normalize();cU.normalize();
-        const diff=new THREE.Vector3().subVectors(hitPt,linearPt1);
+        const cR=new THREE.Vector3(),cU=new THREE.Vector3(),cF=new THREE.Vector3();
+        camera.matrix.extractBasis(cR,cU,cF);
+        cR.normalize();cU.normalize();cF.normalize();
+        // Project snap point onto the camera-facing plane through p1
+        // This removes any depth difference between the two points
+        const toSnap=new THREE.Vector3().subVectors(hitPt,linearPt1);
+        const depthOffset=toSnap.dot(cF); // how far off-plane the snap is
+        const snapOnPlane=hitPt.clone().addScaledVector(cF,-depthOffset);
+        // Now project onto chosen axis
+        const diffOnPlane=new THREE.Vector3().subVectors(snapOnPlane,linearPt1);
         const axis=linearLock==='h'?cR:cU;
-        pt2=linearPt1.clone().addScaledVector(axis,diff.dot(axis));
+        pt2=linearPt1.clone().addScaledVector(axis,diffOnPlane.dot(axis));
         lockLabel=' ['+(linearLock==='h'?'H-Lock':'V-Lock')+']';
       }
       const dist=linearPt1.distanceTo(pt2);
