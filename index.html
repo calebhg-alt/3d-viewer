@@ -651,12 +651,19 @@ function findCCSnap(mx,my,thr=22){
   for(const c of circleCenters){const s=toScreen(c),d=Math.hypot(s.x-mx,s.y-my);if(d<thr&&d<bestD){bestD=d;best=c.clone();}}
   return best;
 }
-function findCLSnap(mx,my,thr=20){
-  if(!centerlineSegs.length)return null;
+function findCLSnap(mx,my,thr=26){
+  // Snap to centerline segments AND circle centers
+  if(!centerlineSegs.length&&!circleCenters.length) return null;
   let best=null,bestD=Infinity;
+  // Check circle centers first (highest priority)
+  for(const c of circleCenters){
+    const s=toScreen(c);const d=Math.hypot(s.x-mx,s.y-my);
+    if(d<thr&&d<bestD){bestD=d;best=c.clone();}
+  }
+  // Check along centerline segments
   for(const seg of centerlineSegs){
-    for(let i=0;i<=32;i++){
-      const pt=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,i/32);
+    for(let i=0;i<=48;i++){
+      const pt=new THREE.Vector3().lerpVectors(seg.p1,seg.p2,i/48);
       const s=toScreen(pt);const d=Math.hypot(s.x-mx,s.y-my);
       if(d<thr&&d<bestD){bestD=d;best=pt.clone();}
     }
@@ -930,9 +937,10 @@ canvas.addEventListener('mousemove',e=>{
   if(snap){
     const col=snap.type==='vert'?0xC4721A:0x00BCD4;
     const snapCol=snap.type==='edge'?0xFFEB3B:snap.type==='vert'?0xC4721A:0x00BCD4;
-    snapSphere=makeSphere(snap.pt,snapCol,modelSize*0.018);scene.add(snapSphere);
+    const snapR=snap.type==='cl'?modelSize*0.026:modelSize*0.018;
+    snapSphere=makeSphere(snap.pt,snapCol,snapR);scene.add(snapSphere);
     snapIndicator.style.display='block';
-    const snapLabels={cl:'Snapped to centerline',cc:'Snapped to circle center',vert:'Snapped to vertex',edge:'Snapped to edge'};
+    const snapLabels={cl:'Snapped to centerline / circle center',cc:'Snapped to circle center',vert:'Snapped to vertex',edge:'Snapped to edge'};
     snapIndicator.textContent=snapLabels[snap.type]||'Snapped';
     const snapBgs={cl:'#00838F',cc:'#00838F',vert:'#C4721A',edge:'#795548'};
     snapIndicator.style.background=snapBgs[snap.type]||'#C4721A';
