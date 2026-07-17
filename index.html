@@ -732,7 +732,11 @@ function isVisible(pt){
   rc.set(cam.position,dir);rc.near=0.001;
   const hits=rc.intersectObject(currentModel,true);
   if(!hits.length) return true;
-  return hits[0].distance>=cam.position.distanceTo(pt)-modelSize*0.025;
+  const distToPt=cam.position.distanceTo(pt);
+  // Use a generous tolerance — 8% of model size
+  // This handles points ON surfaces without falsely culling them
+  // Only reject if something is significantly in front of the point
+  return hits[0].distance>=distToPt-modelSize*0.08;
 }
 
 function findVertexSnap(mx,my,thr=18){
