@@ -107,8 +107,9 @@ kbd{background:white;border:1px solid #B0BEC5;border-radius:4px;padding:1px 5px;
     <button class="tb-btn" id="btn-pan" aria-pressed="false" aria-label="Pan mode"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Pan</button>
     <div class="tb-sep" role="separator"></div>
     <button class="tb-btn" id="btn-linear" aria-pressed="false" aria-label="Linear measure — 2 points"><i class="ti ti-ruler" style="font-size:14px;" aria-hidden="true"></i>Linear</button>
-    <button class="tb-btn" id="btn-hlock" aria-pressed="false" aria-label="Lock linear measurement to horizontal" title="After clicking Linear, this locks the measurement to horizontal only"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>H</button>
-    <button class="tb-btn" id="btn-vlock" aria-pressed="false" aria-label="Lock linear measurement to vertical" title="After clicking Linear, this locks the measurement to vertical only"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>V</button>
+    <button class="tb-btn" id="btn-hlock" aria-pressed="false" aria-label="Lock to world X axis (horizontal)" title="Locks measurement to world X axis (left/right)"><i class="ti ti-arrows-horizontal" style="font-size:14px;" aria-hidden="true"></i>X</button>
+    <button class="tb-btn" id="btn-vlock" aria-pressed="false" aria-label="Lock to world Y axis (vertical)" title="Locks measurement to world Y axis (up/down)"><i class="ti ti-arrows-vertical" style="font-size:14px;" aria-hidden="true"></i>Y</button>
+    <button class="tb-btn" id="btn-dlock" aria-pressed="false" aria-label="Lock to world Z axis (depth)" title="Locks measurement to world Z axis (depth)"><i class="ti ti-arrows-move" style="font-size:14px;" aria-hidden="true"></i>Z</button>
     <button class="tb-btn" id="btn-radial" aria-pressed="false" aria-label="Radial measure — 3 points on curve"><i class="ti ti-circle" style="font-size:14px;" aria-hidden="true"></i>Radial (3pt)</button>
     <button class="tb-btn" id="btn-angle" aria-pressed="false" aria-label="Angle measure — vertex then 2 arm points"><i class="ti ti-angle" style="font-size:14px;" aria-hidden="true"></i>Angle</button>
     <button class="tb-btn" id="btn-locate" aria-pressed="false" aria-label="Locate — click 2 points to get horizontal, vertical and total distance"><i class="ti ti-crosshair" style="font-size:14px;" aria-hidden="true"></i>Locate</button>
@@ -348,7 +349,7 @@ let radialPts=[],radialMarkers=[],radialPreview=null;
 let anglePts=[],angleMarkers=[];
 let circleCenters=[],centerlineSegs=[];
 let locPt1=null,locMarker1=null,locPreview=null;
-let linearLock='none'; // 'none' | 'h' | 'v'  — locks linear to H or V axis
+let linearLock='none'; // 'none'|'h'(X)|'v'(Y)|'d'(Z) — locks linear to world axis
 let hvPt1=null,hvMarker1=null,hvPreview=null; // shared state for H-Dim and V-Dim
 let hDimPt1=null,hDimMarker1=null;
 let vDimPt1=null,vDimMarker1=null;
@@ -870,16 +871,11 @@ canvas.addEventListener('mousemove',e=>{
     if(linearPreview){scene.remove(linearPreview);linearPreview=null;}
     let previewEnd=hitPt.clone();
     if(linearLock!=='none'){
-      const cR=new THREE.Vector3(),cU=new THREE.Vector3(),cF=new THREE.Vector3();
-      camera.matrix.extractBasis(cR,cU,cF);
-      cR.normalize();cU.normalize();cF.normalize();
-      // Project onto plane through p1 facing camera first
-      const toSnap=new THREE.Vector3().subVectors(hitPt,linearPt1);
-      const depthOff=toSnap.dot(cF);
-      const onPlane=hitPt.clone().addScaledVector(cF,-depthOff);
-      const diffOnPlane=new THREE.Vector3().subVectors(onPlane,linearPt1);
-      const axis=linearLock==='h'?cR:cU;
-      previewEnd=linearPt1.clone().addScaledVector(axis,diffOnPlane.dot(axis));
+      // Lock to true world axis — no camera dependency
+      const AXES={h:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),d:new THREE.Vector3(0,0,1)};
+      const axis=AXES[linearLock];
+      const diff=new THREE.Vector3().subVectors(hitPt,linearPt1);
+      previewEnd=linearPt1.clone().addScaledVector(axis,diff.dot(axis));
     }
     linearPreview=new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([linearPt1,previewEnd]),
@@ -949,19 +945,13 @@ canvas.addEventListener('click',e=>{
       let pt2=hitPt.clone();
       let lockLabel='';
       if(linearLock!=='none'){
-        const cR=new THREE.Vector3(),cU=new THREE.Vector3(),cF=new THREE.Vector3();
-        camera.matrix.extractBasis(cR,cU,cF);
-        cR.normalize();cU.normalize();cF.normalize();
-        // Project snap point onto the camera-facing plane through p1
-        // This removes any depth difference between the two points
-        const toSnap=new THREE.Vector3().subVectors(hitPt,linearPt1);
-        const depthOffset=toSnap.dot(cF); // how far off-plane the snap is
-        const snapOnPlane=hitPt.clone().addScaledVector(cF,-depthOffset);
-        // Now project onto chosen axis
-        const diffOnPlane=new THREE.Vector3().subVectors(snapOnPlane,linearPt1);
-        const axis=linearLock==='h'?cR:cU;
-        pt2=linearPt1.clone().addScaledVector(axis,diffOnPlane.dot(axis));
-        lockLabel=' ['+(linearLock==='h'?'H-Lock':'V-Lock')+']';
+        // True world-axis lock — X(h), Y(v), Z(d)
+        const AXES={h:new THREE.Vector3(1,0,0),v:new THREE.Vector3(0,1,0),d:new THREE.Vector3(0,0,1)};
+        const LABELS={h:'X',v:'Y',d:'Z'};
+        const axis=AXES[linearLock];
+        const diff=new THREE.Vector3().subVectors(hitPt,linearPt1);
+        pt2=linearPt1.clone().addScaledVector(axis,diff.dot(axis));
+        lockLabel=' ['+LABELS[linearLock]+'-axis]';
       }
       const dist=linearPt1.distanceTo(pt2);
       const col=linearLock==='none'?0x2B6A82:0x2E7D32;
@@ -979,7 +969,7 @@ canvas.addEventListener('click',e=>{
       }
       scene.add(sA);scene.add(sB);scene.add(line);
       measureCount++;addRow(measureCount,'linear','Distance: '+dist.toFixed(4)+' units'+lockLabel,[...objs]);
-      announce('Linear'+lockLabel+': '+dist.toFixed(4)+' units.');
+      announce('Linear'+lockLabel+': '+dist.toFixed(4)+' units (true world distance).');
       linearPt1=null;measureHint.textContent='Click point 1';
     }
   }
@@ -1214,17 +1204,21 @@ document.getElementById('btn-pan').addEventListener('click',()=>{document.getEle
 document.getElementById('btn-linear').addEventListener('click',()=>setMode('linear'));
 document.getElementById('btn-hlock').addEventListener('click',()=>{
   linearLock=linearLock==='h'?'none':'h';
-  document.getElementById('btn-hlock').classList.toggle('active',linearLock==='h');
-  document.getElementById('btn-hlock').setAttribute('aria-pressed',String(linearLock==='h'));
-  if(linearLock==='h'){linearLock='h';document.getElementById('btn-vlock').classList.remove('active');document.getElementById('btn-vlock').setAttribute('aria-pressed','false');}
-  announce(linearLock==='h'?'H-Lock ON — linear measures horizontal only':'H-Lock OFF');
+  ['btn-hlock','btn-vlock','btn-dlock'].forEach(id=>{ document.getElementById(id).classList.remove('active'); document.getElementById(id).setAttribute('aria-pressed','false'); });
+  if(linearLock==='h'){ document.getElementById('btn-hlock').classList.add('active'); document.getElementById('btn-hlock').setAttribute('aria-pressed','true'); }
+  announce(linearLock==='h'?'X-axis lock ON — measures world X (horizontal)':'X-axis lock OFF');
 });
 document.getElementById('btn-vlock').addEventListener('click',()=>{
   linearLock=linearLock==='v'?'none':'v';
-  document.getElementById('btn-vlock').classList.toggle('active',linearLock==='v');
-  document.getElementById('btn-vlock').setAttribute('aria-pressed',String(linearLock==='v'));
-  if(linearLock==='v'){document.getElementById('btn-hlock').classList.remove('active');document.getElementById('btn-hlock').setAttribute('aria-pressed','false');}
-  announce(linearLock==='v'?'V-Lock ON — linear measures vertical only':'V-Lock OFF');
+  ['btn-hlock','btn-vlock','btn-dlock'].forEach(id=>{ document.getElementById(id).classList.remove('active'); document.getElementById(id).setAttribute('aria-pressed','false'); });
+  if(linearLock==='v'){ document.getElementById('btn-vlock').classList.add('active'); document.getElementById('btn-vlock').setAttribute('aria-pressed','true'); }
+  announce(linearLock==='v'?'Y-axis lock ON — measures world Y (vertical)':'Y-axis lock OFF');
+});
+document.getElementById('btn-dlock').addEventListener('click',()=>{
+  linearLock=linearLock==='d'?'none':'d';
+  ['btn-hlock','btn-vlock','btn-dlock'].forEach(id=>{ document.getElementById(id).classList.remove('active'); document.getElementById(id).setAttribute('aria-pressed','false'); });
+  if(linearLock==='d'){ document.getElementById('btn-dlock').classList.add('active'); document.getElementById('btn-dlock').setAttribute('aria-pressed','true'); }
+  announce(linearLock==='d'?'Z-axis lock ON — measures world Z (depth)':'Z-axis lock OFF');
 });
 document.getElementById('btn-locate').addEventListener('click',()=>setMode('locate'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
@@ -1253,10 +1247,12 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='a'||e.key==='A')setMode('angle');
     else if(e.key==='g'||e.key==='G')setMode('locate');
     else if(e.key==='h'||e.key==='H'){document.getElementById('btn-hlock').click();}
-    else if(e.key==='v'||e.key==='V'){document.getElementById('btn-vlock').click();}else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
+    else if(e.key==='v'||e.key==='V'){document.getElementById('btn-vlock').click();}
+    else if(e.key==='d'||e.key==='D'){document.getElementById('btn-dlock').click();}else if(e.key==='h'||e.key==='H')setMode('hdim');else if(e.key==='v'||e.key==='V')setMode('vdim');
     else if(e.key==='g'||e.key==='G')setMode('locate');
     else if(e.key==='h'||e.key==='H'){document.getElementById('btn-hlock').click();}
     else if(e.key==='v'||e.key==='V'){document.getElementById('btn-vlock').click();}
+    else if(e.key==='d'||e.key==='D'){document.getElementById('btn-dlock').click();}
     else if(e.key==='1'||e.code==='Digit1')setView('front');else if(e.key==='2'||e.code==='Digit2')setView('back');
     else if(e.key==='3'||e.code==='Digit3')setView('right');else if(e.key==='4'||e.code==='Digit4')setView('left');
     else if(e.key==='5'||e.code==='Digit5')setView('top');else if(e.key==='6'||e.code==='Digit6')setView('bottom');
